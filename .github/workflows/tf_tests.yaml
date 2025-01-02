@@ -9,6 +9,8 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-24.04
+    name: terraform (${{ matrix.aws_region }}, ${{ matrix.aws_account_id }}, ${{ matrix.environment }})
+    # name: ${{ matrix.a }}, ${{ matrix.b }}, ${{ matrix.c }}
 
     permissions:
       actions: read # Required to identify workflow run.
@@ -19,66 +21,107 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        tool:
-          - tofu
-          - terraform
-        test:
-          - pass_one
-          - pass_character_limit
-          - fail_data_source_error
-          - fail_format_diff
-          - fail_invalid_resource_type
+        # tool:
+        #   - tofu
+        #   - terraform
+        # test:
+        #   - pass_one
+        #   - pass_character_limit
+        #   - fail_data_source_error
+        #   - fail_format_diff
+        #   - fail_invalid_resource_type
+        # a:
+        #   - 1
+        #   - 2
+        #   - 3
+        # b:
+        #   - A
+        #   -
+        #   - C
+        # c:
+        #   - X
+        #   - Y
+        #   - Z
+        include:
+          - aws_region: us-east-1
+            aws_account_id:
+            environment: development
+          - aws_region: us-east-1
+            aws_account_id: 22222222
+            environment: staging
 
     steps:
       - name: Echo context
         env:
           GH_JSON: ${{ toJson(github) }}
-        run: echo "$GH_JSON"
+        run: |
+          echo "GITHUB_JOB" "$GITHUB_JOB"
+          echo "GH_JSON" "$GH_JSON"
+          echo GH_API="X-GitHub-Api-Version:2022-11-28" >> "$GITHUB_ENV"
+          echo GH_TOKEN="${{ github.token }}" >> "$GITHUB_ENV"
 
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
 
-      - name: Setup Tofu
-        if: matrix.tool == 'tofu'
-        uses: opentofu/setup-opentofu@12f4debbf681675350b6cd1f0ff8ecfbda62027b # v1.0.4
-        with:
-          tofu_version: v1.8.8
-          tofu_wrapper: false
-
-      - name: Setup Terraform
-        if: matrix.tool == 'terraform'
-        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
-        with:
-          terraform_version: v1.9.8
-          terraform_wrapper: false
-
-      - name: Provision TF
-        id: tf
-        continue-on-error: true
-        uses: ./
-        with:
-          working-directory: tests/${{ matrix.test }}
-          command: ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
-          arg-lock: ${{ github.event.pull_request.merged }}
-          format: true
-          validate: true
-          tag-actor: never
-          comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
-          tool: ${{ matrix.tool }}
-
-      - name: Echo TF
+      - env:
+          GH_MATRIX: ${{ toJSON(matrix) }}
         run: |
-          echo "check-id: ${{ steps.tf.outputs.check-id }}"
-          echo "command: ${{ steps.tf.outputs.command }}"
-          echo "comment-id: ${{ steps.tf.outputs.comment-id }}"
-          echo "diff: ${{ steps.tf.outputs.diff }}"
-          echo "exitcode: ${{ steps.tf.outputs.exitcode }}"
-          echo "identifier: ${{ steps.tf.outputs.identifier }}"
-          echo "job-id: ${{ steps.tf.outputs.job-id }}"
-          echo "plan-id: ${{ steps.tf.outputs.plan-id }}"
-          echo "plan-url: ${{ steps.tf.outputs.plan-url }}"
-          echo "result: ${{ steps.tf.outputs.result }}"
-          echo "run-url: ${{ steps.tf.outputs.run-url }}"
-          echo "summary: ${{ steps.tf.outputs.summary }}"
+          # List jobs from the current workflow run.
+          workflow_run=$(gh api /repos/{owner}/{repo}/actions/runs/${GITHUB_RUN_ID}/attempts/${GITHUB_RUN_ATTEMPT}/jobs --header "$GH_API" --method GET --field per_page=100)
+
+          # Get the current job ID from the workflow run using different query methods for matrix and regular jobs.
+          if [[ "$GH_MATRIX" == "null" ]]; then
+            # For regular jobs, get the ID of the job with the same name as $GITHUB_JOB (lowercase and '-' or '_' replaced with ' ').
+            # Otherwise, get the ID of the first job in the list as a fallback.
+            job_id=$(echo "$workflow_run" | jq --raw-output '(.jobs[] | select((.name | ascii_downcase | gsub("-|_"; " ")) == (env.GITHUB_JOB | ascii_downcase | gsub("-|_"; " "))) | .id) // .jobs[0].id' | tail -n 1)
+          else
+            # For matrix jobs, join the matrix values with comma separator into a single string and get the ID of the job which contains it.
+            matrix=$(echo "$GH_MATRIX" | jq --raw-output 'to_entries | map(.value) | join(", ")')
+            job_id=$(echo "$workflow_run" | jq --raw-output --arg matrix "$matrix" '.jobs[] | select(.name | contains($matrix)) | .id' | tail -n 1)
+          fi
+          echo "GH_JOB" "$job_id"
+
+      # - name: Setup Tofu
+      #   if: matrix.tool == 'tofu'
+      #   uses: opentofu/setup-opentofu@12f4debbf681675350b6cd1f0ff8ecfbda62027b # v1.0.4
+      #   with:
+      #     tofu_version: v1.8.8
+      #     tofu_wrapper: false
+
+      # - name: Setup Terraform
+      #   if: matrix.tool == 'terraform'
+      #   uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+      #   with:
+      #     terraform_version: v1.9.8
+      #     terraform_wrapper: false
+
+      # - name: Provision TF
+      #   id: tf
+      #   continue-on-error: true
+      #   uses: ./
+      #   with:
+      #     working-directory: tests/${{ matrix.test }}
+      #     command: ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
+      #     arg-lock: ${{ github.event.pull_request.merged }}
+      #     format: true
+      #     validate: true
+      #     tag-actor: never
+      #     comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
+      #     tool: ${{ matrix.tool }}
+
+      # - name: Echo TF
+      #   run: |
+      #     echo "check-id: ${{ steps.tf.outputs.check-id }}"
+      #     echo "command: ${{ steps.tf.outputs.command }}"
+      #     echo "comment-id: ${{ steps.tf.outputs.comment-id }}"
+      #     echo "diff: ${{ steps.tf.outputs.diff }}"
+      #     echo "exitcode: ${{ steps.tf.outputs.exitcode }}"
+      #     echo "identifier: ${{ steps.tf.outputs.identifier }}"
+      #     echo "job-id: ${{ steps.tf.outputs.job-id }}"
+      #     echo "plan-id: ${{ steps.tf.outputs.plan-id }}"
+      #     echo "plan-url: ${{ steps.tf.outputs.plan-url }}"
+      #     echo "result: ${{ steps.tf.outputs.result }}"
+      #     echo "run-url: ${{ steps.tf.outputs.run-url }}"
+      #     echo "summary: ${{ steps.tf.outputs.summary }}"

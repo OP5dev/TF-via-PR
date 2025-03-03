@@ -37,6 +37,7 @@ jobs:
           working-directory: path/to/${{ matrix.deployment }}
           command: ${{ github.event_name == 'merge_group' && 'apply' || 'plan' }}
           arg-lock: ${{ github.event_name == 'merge_group' }}
+          arg-refresh: ${{ github.event_name == 'merge_group' }}
           arg-var-file: env/${{ matrix.deployment }}.tfvars
           arg-workspace: ${{ matrix.deployment }}
           plan-encrypt: ${{ secrets.PASSPHRASE }}

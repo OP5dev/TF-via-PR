@@ -181,7 +181,7 @@ For each workflow run, a matrix-friendly job summary with logs is added as a fal
 
 1. Both `command: plan` and `command: apply` include: `init`, `fmt` (with `format: true`), `validate` (with `validate: true`), and `workspace` (with `arg-workspace`) commands rolled into it automatically.</br>
   To separately run checks and/or generate outputs only, `command: init` can be used.</br></br>
-1. For `merge_group` event trigger, `plan-parity: true` inputs helps to prevent stale apply within the merge queue of workflow runs.</br></br>
+1. Originally intended for `merge_group` event trigger, `plan-parity: true` inputs helps to prevent stale apply within a serial queue of workflow runs when merging multiple PRs.</br></br>
 1. The secret string input for `plan-encrypt` can be of any length, as long as it's consistent between encryption (plan) and decryption (apply).</br></br>
 1. The `on-change` option is true when the exit code of the last TF command is non-zero.</br></br>
 1. The default behavior of `comment-method` is to update the existing PR comment with the latest plan/apply output, making it easy to track changes over time through the comment's revision history.</br></br>

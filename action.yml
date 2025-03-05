@@ -158,9 +158,6 @@ runs:
       shell: bash
       run: |
         # Label PR.
-        # If the label does not exist, create it before adding it to the PR in the format 'tf:${{ inputs.command }}'.
-        gh api /repos/${{ github.repository }}/labels/tf:${{ inputs.command }} --header "$GH_API" --method GET || \
-          gh api /repos/${{ github.repository }}/labels --header "$GH_API" --method POST --field "name=tf:${{ inputs.command }}" --field "description=Pull requests that ${{ inputs.command }} TF code." --field "color=5C4EE5"
         gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/labels --header "$GH_API" --method POST --field "labels[]=tf:${{ inputs.command }}"
 
     - if: ${{ inputs.command == 'plan' }}

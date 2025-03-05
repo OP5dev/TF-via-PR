@@ -36,7 +36,7 @@ jobs:
         with:
           working-directory: path/to/${{ matrix.deployment }}
           command: ${{ github.event_name == 'merge_group' && 'apply' || 'plan' }}
-          arg-refresh: ${{ github.event_name == 'merge_group' && 'false' }} # Skip refresh on apply.
+          arg-refresh: ${{ github.event_name == 'merge_group' && 'false' || 'true' }} # Skip refresh on apply.
           arg-lock: ${{ github.event_name == 'merge_group' }}
           arg-var-file: env/${{ matrix.deployment }}.tfvars
           arg-workspace: ${{ matrix.deployment }}

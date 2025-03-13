@@ -471,7 +471,7 @@ inputs:
     description: "Check format of TF code (e.g., `false`)."
     required: false
   hide-args:
-    default: "detailed-exitcode,lock,out,var="
+    default: "detailed-exitcode,parallelism,lock,out,var="
     description: "Hide comma-separated arguments from the command input (e.g., `detailed-exitcode,lock,out,var=`)."
     required: false
   label-pr:

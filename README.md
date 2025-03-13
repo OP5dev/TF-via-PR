@@ -191,7 +191,7 @@ All supported CLI argument inputs are [listed below](#arguments) with accompanyi
 
 > [!NOTE]
 >
-> - Arguments are passed to the appropriate TF command(s) automatically, whether that's `init`, `workspace`, `validate`, `plan`, or `apply`.</br>
+> - Arguments are passed to the appropriate TF command(s) automatically, whether that's `fmt`, `init`, `validate`, `plan`, or `apply`.</br>
 > - For repeated arguments like `arg-var`, `arg-var-file`, `arg-backend-config`, `arg-replace` and `arg-target`, use commas to separate multiple values (e.g., `arg-var: key1=value1,key2=value2`).
 
 </br>

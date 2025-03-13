@@ -19,9 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        tool:
-          - tofu
-          - terraform
+        tool: [tofu, terraform]
         test:
           - pass_one
           - pass_character_limit

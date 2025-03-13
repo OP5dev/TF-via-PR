@@ -67,7 +67,7 @@ runs:
         echo arg-var-file=$([[ -n "${{ inputs.arg-var-file }}" ]] && echo " -var-file=${{ inputs.arg-var-file }}" | sed "s/,/ -var-file=/g" || echo "") >> "$GITHUB_OUTPUT"
         echo arg-var=$([[ -n "${{ inputs.arg-var }}" ]] && echo " -var=${{ inputs.arg-var }}" | sed "s/,/ -var=/g" || echo "") >> "$GITHUB_OUTPUT"
         echo arg-write=$([[ -n "${{ inputs.arg-write }}" ]] && echo " -write=${{ inputs.arg-write }}" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-workspace=$([[ -n "${{ inputs.arg-workspace }}" ]] && echo " -workspace=${{ inputs.arg-workspace }}" || [[ -n "${{ env.TF_WORKSPACE }}" ]] && echo " -workspace=${{ env.TF_WORKSPACE }}" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-workspace=$([[ -n "${{ env.TF_WORKSPACE }}" ]] && echo " -workspace=${{ env.TF_WORKSPACE }}" || [[ -n "${{ inputs.arg-workspace }}" ]] && echo " -workspace=${{ inputs.arg-workspace }}" || echo "") >> "$GITHUB_OUTPUT"
 
     - id: identifier
       env:

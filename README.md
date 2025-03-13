@@ -68,12 +68,13 @@ jobs:
         with:
           terraform_wrapper: false
 
+      # Run plan by default, or apply on merge.
       - uses: op5dev/tf-via-pr@v13
         with:
-          # Run plan by default, or apply on push to main.
           working-directory: path/to/directory
           command: ${{ github.event_name == 'push' && 'apply' || 'plan' }}
           arg-lock: ${{ github.event_name == 'push' }}
+          arg-backend-config: env/dev.tfbackend
           arg-var-file: env/dev.tfvars
           arg-workspace: dev-use1
           plan-encrypt: ${{ secrets.PASSPHRASE }}
@@ -81,15 +82,15 @@ jobs:
 
 > [!TIP]
 >
-> - All supported arguments (e.g., `-backend-config`, `-destroy`, `-parallelism`, etc.) are [listed below](#inputs---arguments).
-> - Environment variables can be passed in for cloud platform authentication (e.g., [configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials "Configuring AWS credentials for use in GitHub Actions.") for short-lived credentials).
+> - All supported arguments (e.g., `-backend-config`, `-destroy`, `-parallelism`, etc.) are [listed below](#arguments).
+> - Environment variables can be passed in for cloud platform authentication (e.g., [configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials "Configuring AWS credentials for use in GitHub Actions.") for short-lived credentials via OIDC).
 > - Recommend setting `terraform_wrapper`/`tofu_wrapper` to `false` in order to output the [detailed exit code](https://developer.hashicorp.com/terraform/cli/commands/plan#detailed-exitcode) for better error handling.
 
 </br>
 
 ### Where to find more examples?
 
-The following workflows showcase common use cases, while a comprehensive list of inputs is [documented](#parameters) below.
+The following workflows showcase common use cases, while a comprehensive list of inputs is [documented](#inputs) below.
 
 <table>
   <tr>
@@ -134,7 +135,7 @@ The following workflows showcase common use cases, while a comprehensive list of
 
 ### How does encryption work?
 
-Before the workflow uploads the plan file as an artifact, it can be encrypted with a passphrase (e.g., `${{ secrets.PASSPHRASE }}`) to prevent exposure of sensitive data using `plan-encrypt` input. This is done with [OpenSSL](https://docs.openssl.org/master/man1/openssl-enc/ "OpenSSL encryption documentation.")'s symmetric stream counter mode encryption with salt and pbkdf2.
+Before the workflow uploads the plan file as an artifact, it can be encrypted-at-rest with a passphrase using `plan-encrypt` input to prevent exposure of sensitive data (e.g., `${{ secrets.PASSPHRASE }}`). This is done with [OpenSSL](https://docs.openssl.org/master/man1/openssl-enc/ "OpenSSL encryption documentation.")'s symmetric stream counter mode ([256 bit AES in CTR](https://docs.openssl.org/3.3/man1/openssl-enc/#supported-ciphers:~:text=192/256%20bit-,AES%20in%20CTR%20mode,-aes%2D%5B128%7C192)) encryption with salt and pbkdf2.
 
 In order to decrypt the plan file locally, use the following commands after downloading the artifact (adding a whitespace before `openssl` to prevent recording the command in shell history):
 
@@ -175,7 +176,7 @@ openssl enc -d -aes-256-ctr -pbkdf2 -salt \
 
 1. Both `command: plan` and `command: apply` include: `init`, `fmt` (with `format: true`), `validate` (with `validate: true`), and `workspace` (with `arg-workspace`) commands rolled into it automatically.</br>
   To separately run checks and/or generate outputs only, `command: init` can be used.</br></br>
-1. Originally intended for `merge_group` event trigger, `plan-parity: true` input helps prevent stale apply within a series of workflow runs when merging multiple PRs.</br></br>
+1. Originally intended for `merge_group` event trigger, `plan-parity: true` input helps to prevent stale apply within a series of workflow runs when merging multiple PRs.</br></br>
 1. The secret string input for `plan-encrypt` can be of any length, as long as it's consistent between encryption (plan) and decryption (apply).</br></br>
 1. The `on-change` option is true when the exit code of the last TF command is non-zero.</br></br>
 1. The default behavior of `comment-method` is to update the existing PR comment with the latest plan/apply output, making it easy to track changes over time through the comment's revision history.</br></br>

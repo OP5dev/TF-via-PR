@@ -33,7 +33,7 @@ jobs:
       - name: Echo context
         env:
           GH_JSON: ${{ toJson(github) }}
-        run: echo "$GH_JSON" && echo "TF_WORKSPACE=test" >> "$GITHUB_ENV"
+        run: echo "$GH_JSON"
 
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -51,7 +51,7 @@ jobs:
         if: matrix.tool == 'terraform'
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
         with:
-          terraform_version: v1.10.5
+          terraform_version: v1.11.2
           terraform_wrapper: false
 
       - name: Provision TF
@@ -60,12 +60,13 @@ jobs:
         uses: ./
         with:
           working-directory: tests/${{ matrix.test }}
-          command: ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
           arg-lock: ${{ github.event.pull_request.merged }}
+          arg-workspace: ${{ matrix.tool }}
+          command: ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
+          comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
           format: true
           validate: true
           tag-actor: never
-          comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
           tool: ${{ matrix.tool }}
 
       - name: Echo TF

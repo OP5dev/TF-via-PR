@@ -217,7 +217,7 @@ Applicable only when `validate: true`.
 
 </br>
 
-Applicable to both `command: plan` and `command: apply` inputs.
+Applicable to respective "plan" and "apply" `command` inputs ("init" included).
 
 | Name                      | CLI Argument                             |
 | ------------------------- | ---------------------------------------- |

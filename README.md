@@ -152,7 +152,7 @@ openssl enc -d -aes-256-ctr -pbkdf2 -salt \
 
 ## Inputs
 
-
+All supported CLI argument inputs are [listed below](#arguments) with accompanying options, while workflow configuration inputs are listed here.
 
 ### Configuration
 
@@ -194,9 +194,27 @@ openssl enc -d -aes-256-ctr -pbkdf2 -salt \
 > - Arguments are passed to the appropriate TF command(s) automatically, whether that's `init`, `workspace`, `validate`, `plan`, or `apply`.</br>
 > - For repeated arguments like `arg-var`, `arg-var-file`, `arg-backend-config`, `arg-replace` and `arg-target`, use commas to separate multiple values (e.g., `arg-var: key1=value1,key2=value2`).
 
-<details><summary>Toggle view of all available CLI arguments.</summary>
-
 </br>
+
+Applicable only when `format: true`.
+
+| Name            | CLI Argument                     |
+| --------------- | -------------------------------- |
+| `arg-check`     | `-check`</br>Default: `true`     |
+| `arg-diff`      | `-diff`</br>Default: `true`      |
+| `arg-list`      | `-list`                          |
+| `arg-recursive` | `-recursive`</br>Default: `true` |
+| `arg-write`     | `-write`                         |
+
+
+Applicable only when `validate: true`.
+
+| Name                 | CLI Argument      |
+| -------------------- | ----------------- |
+| `arg-no-tests`       | `-no-tests`       |
+| `arg-test-directory` | `-test-directory` |
+
+Applicable to both `command: plan` and `command: apply` inputs.
 
 | Name                      | CLI Argument                             |
 | ------------------------- | ---------------------------------------- |
@@ -204,40 +222,32 @@ openssl enc -d -aes-256-ctr -pbkdf2 -salt \
 | `arg-backend-config`      | `-backend-config`                        |
 | `arg-backend`             | `-backend`                               |
 | `arg-backup`              | `-backup`                                |
-| `arg-chdir`               | `-chdir`                                 |
-| `arg-check`               | `-check`</br>Default: `true`             |
+| `arg-chdir`               | `-chdir`</br>Alias: `working-directory`  |
 | `arg-compact-warnings`    | `-compact-warnings`                      |
 | `arg-concise`             | `-concise`                               |
 | `arg-destroy`             | `-destroy`                               |
 | `arg-detailed-exitcode`   | `-detailed-exitcode`</br>Default: `true` |
-| `arg-diff`                | `-diff`</br>Default: `true`              |
 | `arg-force-copy`          | `-force-copy`                            |
 | `arg-from-module`         | `-from-module`                           |
 | `arg-generate-config-out` | `-generate-config-out`                   |
 | `arg-get`                 | `-get`                                   |
-| `arg-list`                | `-list`                                  |
 | `arg-lock-timeout`        | `-lock-timeout`                          |
 | `arg-lock`                | `-lock`                                  |
 | `arg-lockfile`            | `-lockfile`                              |
 | `arg-migrate-state`       | `-migrate-state`                         |
-| `arg-no-tests`            | `-no-tests`                              |
 | `arg-parallelism`         | `-parallelism`                           |
 | `arg-plugin-dir`          | `-plugin-dir`                            |
 | `arg-reconfigure`         | `-reconfigure`                           |
-| `arg-recursive`           | `-recursive`</br>Default: `true`         |
 | `arg-refresh-only`        | `-refresh-only`                          |
 | `arg-refresh`             | `-refresh`                               |
 | `arg-replace`             | `-replace`                               |
 | `arg-state-out`           | `-state-out`                             |
 | `arg-state`               | `-state`                                 |
 | `arg-target`              | `-target`                                |
-| `arg-test-directory`      | `-test-directory`                        |
 | `arg-upgrade`             | `-upgrade`                               |
 | `arg-var-file`            | `-var-file`                              |
 | `arg-var`                 | `-var`                                   |
-| `arg-workspace`           | `-workspace`                             |
-| `arg-write`               | `-write`                                 |
-</details>
+| `arg-workspace`           | `-workspace`</br>Alias: `TF_WORKSPACE`   |
 
 </br>
 

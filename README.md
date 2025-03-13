@@ -196,27 +196,6 @@ All supported CLI argument inputs are [listed below](#arguments) with accompanyi
 
 </br>
 
-Applicable only when `format: true`.
-
-| Name            | CLI Argument                     |
-| --------------- | -------------------------------- |
-| `arg-check`     | `-check`</br>Default: `true`     |
-| `arg-diff`      | `-diff`</br>Default: `true`      |
-| `arg-list`      | `-list`                          |
-| `arg-recursive` | `-recursive`</br>Default: `true` |
-| `arg-write`     | `-write`                         |
-
-</br>
-
-Applicable only when `validate: true`.
-
-| Name                 | CLI Argument      |
-| -------------------- | ----------------- |
-| `arg-no-tests`       | `-no-tests`       |
-| `arg-test-directory` | `-test-directory` |
-
-</br>
-
 Applicable to respective "plan" and "apply" `command` inputs ("init" included).
 
 | Name                      | CLI Argument                             |
@@ -251,6 +230,27 @@ Applicable to respective "plan" and "apply" `command` inputs ("init" included).
 | `arg-var-file`            | `-var-file`                              |
 | `arg-var`                 | `-var`                                   |
 | `arg-workspace`           | `-workspace`</br>Alias: `TF_WORKSPACE`   |
+
+</br>
+
+Applicable only when `format: true`.
+
+| Name            | CLI Argument                     |
+| --------------- | -------------------------------- |
+| `arg-check`     | `-check`</br>Default: `true`     |
+| `arg-diff`      | `-diff`</br>Default: `true`      |
+| `arg-list`      | `-list`                          |
+| `arg-recursive` | `-recursive`</br>Default: `true` |
+| `arg-write`     | `-write`                         |
+
+</br>
+
+Applicable only when `validate: true`.
+
+| Name                 | CLI Argument      |
+| -------------------- | ----------------- |
+| `arg-no-tests`       | `-no-tests`       |
+| `arg-test-directory` | `-test-directory` |
 
 </br>
 

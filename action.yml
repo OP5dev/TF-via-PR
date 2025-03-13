@@ -270,17 +270,19 @@ runs:
       shell: bash
       run: |
         # Post output.
-        # Parse the tf.command.txt file.
+        echo "Parse the 'tf.command.txt' file."
         command=$(cat tf.command.txt)
 
-        # Remove each comma-delemited hide-args argument from the command.
+        echo "Remove each comma-delemited 'hide-args' argument from the command."
+        echo "${{ inputs.hide-args }}"
         IFS=',' read -ra hide_args <<< "${{ inputs.hide-args }}"
         for arg in "${hide_args[@]}"; do
           command=$(echo "$command" | grep --invert-match "^ -${arg}" || true)
         done
 
-        # Conversely, show each comma-delemited show-args argument in the command.
+        echo "Conversely, show each comma-delemited 'show-args' argument in the command."
         command_append=""
+        echo "${{ inputs.show-args }}"
         IFS=',' read -ra show_args <<< "${{ inputs.show-args }}"
         for arg in "${show_args[@]}"; do
           command_append+=$(echo "${{ steps.arg.outputs.arg-workspace }}${{ steps.arg.outputs.arg-backend-config }}${{ steps.arg.outputs.arg-backend }}${{ steps.arg.outputs.arg-backup }}${{ steps.arg.outputs.arg-check }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-destroy }}${{ steps.arg.outputs.arg-detailed-exitcode }}${{ steps.arg.outputs.arg-diff }}${{ steps.arg.outputs.arg-force-copy }}${{ steps.arg.outputs.arg-from-module }}${{ steps.arg.outputs.arg-generate-config-out }}${{ steps.arg.outputs.arg-get }}${{ steps.arg.outputs.arg-list }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-lockfile }}${{ steps.arg.outputs.arg-migrate-state }}${{ steps.arg.outputs.arg-no-tests }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-plugin-dir }}${{ steps.arg.outputs.arg-reconfigure }}${{ steps.arg.outputs.arg-recursive }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-state-out }}${{ steps.arg.outputs.arg-state }}${{ steps.arg.outputs.arg-target }}${{ steps.arg.outputs.arg-test-directory }}${{ steps.arg.outputs.arg-upgrade }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-write }}${{ steps.arg.outputs.arg-auto-approve }}" | sed 's/ -/\n -/g' | grep "^ -${arg}" || true)
@@ -488,7 +490,7 @@ inputs:
     description: "Duration after which plan file artifact will expire in days (e.g., '90')."
     required: false
   show-args:
-    default: ""
+    default: "workspace"
     description: "Show comma-separated arguments in the command input (e.g., `workspace`)."
     required: false
   tag-actor:

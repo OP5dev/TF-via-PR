@@ -290,6 +290,7 @@ runs:
 
         echo "command=$command"
         echo "command_append=$command_append"
+        echo "steps.arg.outputs.arg-workspace=${{ steps.arg.outputs.arg-workspace }}
         command=$(echo "$command" | tr -d '\n')$command_append
         echo "command=$command" >> "$GITHUB_OUTPUT"
 

@@ -183,7 +183,7 @@ All supported CLI argument inputs are [listed below](#arguments) with accompanyi
 1. The `on-change` option is true when the exit code of the last TF command is non-zero.</br></br>
 1. The default behavior of `comment-method` is to update the existing PR comment with the latest plan/apply output, making it easy to track changes over time through the comment's revision history.</br></br>
   [![PR comment revision history comparing plan and apply outputs.](/.github/assets/revisions.png)](https://raw.githubusercontent.com/op5dev/tf-via-pr/refs/heads/main/.github/assets/revisions.png "View full-size image.")</br></br>
-1. It can be desirable to hide certain arguments from the last run command input (e.g., sensitive `arg-var` values) to prevent exposure in the PR comment. Conversely, it can be desirable to show other arguments even if they are not in last run command input (e.g., `arg-workspace` or `arg-backend-config` selection). These sensible defaults can be extended or overridden.
+1. It can be desirable to hide certain arguments from the last run command input (e.g., sensitive `arg-var` values) to prevent exposure in the PR comment. Conversely, it can be desirable to show other arguments even if they are not in last run command input (e.g., `arg-workspace` or `arg-backend-config` selection).
 
 </br>
 

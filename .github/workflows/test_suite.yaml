@@ -33,7 +33,7 @@ jobs:
       - name: Echo context
         env:
           GH_JSON: ${{ toJson(github) }}
-        run: echo "$GH_JSON"
+        run: echo "$GH_JSON" && echo "TF_WORKSPACE=test" >> "$GITHUB_ENV"
 
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -62,7 +62,6 @@ jobs:
           working-directory: tests/${{ matrix.test }}
           command: ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
           arg-lock: ${{ github.event.pull_request.merged }}
-          arg-workspace: test
           format: true
           validate: true
           tag-actor: never

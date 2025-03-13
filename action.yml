@@ -488,7 +488,7 @@ inputs:
     description: "Duration after which plan file artifact will expire in days (e.g., '90')."
     required: false
   show-args:
-    default: "workspace"
+    default: ""
     description: "Show comma-separated arguments in the command input (e.g., `workspace`)."
     required: false
   tag-actor:

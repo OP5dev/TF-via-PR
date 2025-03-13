@@ -44,14 +44,14 @@ jobs:
         if: matrix.tool == 'tofu'
         uses: opentofu/setup-opentofu@12f4debbf681675350b6cd1f0ff8ecfbda62027b # v1.0.4
         with:
-          tofu_version: v1.9.0
+          tofu_version: "~1.0.0"
           tofu_wrapper: false
 
       - name: Setup Terraform
         if: matrix.tool == 'terraform'
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
         with:
-          terraform_version: v1.11.2
+          terraform_version: "~1.0.0"
           terraform_wrapper: false
 
       - name: Provision TF

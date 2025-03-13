@@ -206,6 +206,7 @@ Applicable only when `format: true`.
 | `arg-recursive` | `-recursive`</br>Default: `true` |
 | `arg-write`     | `-write`                         |
 
+</br>
 
 Applicable only when `validate: true`.
 
@@ -213,6 +214,8 @@ Applicable only when `validate: true`.
 | -------------------- | ----------------- |
 | `arg-no-tests`       | `-no-tests`       |
 | `arg-test-directory` | `-test-directory` |
+
+</br>
 
 Applicable to both `command: plan` and `command: apply` inputs.
 

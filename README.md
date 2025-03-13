@@ -223,7 +223,6 @@ For each workflow run, a matrix-friendly job summary with logs is added as a fal
 | `arg-lockfile`            | `-lockfile`                              |
 | `arg-migrate-state`       | `-migrate-state`                         |
 | `arg-no-tests`            | `-no-tests`                              |
-| `arg-or-create`           | `-or-create`</br>Default: `true`         |
 | `arg-parallelism`         | `-parallelism`                           |
 | `arg-plugin-dir`          | `-plugin-dir`                            |
 | `arg-reconfigure`         | `-reconfigure`                           |

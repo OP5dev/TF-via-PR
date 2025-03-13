@@ -28,6 +28,7 @@ runs:
         echo TF_IN_AUTOMATION="true" >> "$GITHUB_ENV"
         echo TF_INPUT="false" >> "$GITHUB_ENV"
         if [[ "$GITHUB_SERVER_URL" != "https://github.com" ]]; then echo GH_HOST=$(echo "$GITHUB_SERVER_URL" | sed 's/.*:\/\///') >> "$GITHUB_ENV"; fi
+        if [[ -n "${{ inputs.arg-workspace }}" ]]; then echo "TF_WORKSPACE=${{ inputs.arg-workspace }}" >> "$GITHUB_ENV"; fi
 
         # CLI arguments.
         echo arg-auto-approve=$([[ -n "${{ inputs.arg-auto-approve }}" ]] && echo " -auto-approve" || echo "") >> "$GITHUB_OUTPUT"
@@ -90,7 +91,7 @@ runs:
         echo "pr=$pr_number" >> "$GITHUB_OUTPUT"
 
         # Generate identifier for the workflow run using MD5 hashing algorithm for concise and unique naming.
-        identifier="${{ steps.arg.outputs.arg-chdir }}${{ inputs.arg-workspace }}${{ steps.arg.outputs.arg-backend-config }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }}${{ steps.arg.outputs.arg-destroy }}"
+        identifier="${{ steps.arg.outputs.arg-chdir }}${{ steps.arg.outputs.arg-workspace }}${{ steps.arg.outputs.arg-backend-config }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }}${{ steps.arg.outputs.arg-destroy }}"
         identifier=$(echo -n "$identifier" | md5sum | awk '{print $1}')
         echo "name=${{ inputs.tool }}-${pr_number}-${identifier}.tfplan" >> "$GITHUB_OUTPUT"
 
@@ -132,16 +133,6 @@ runs:
         args="${{ steps.arg.outputs.arg-backend-config }}${{ steps.arg.outputs.arg-backend }}${{ inputs.tool == 'tofu' && steps.arg.outputs.arg-var-file || '' }}${{ inputs.tool == 'tofu' && steps.arg.outputs.arg-var || '' }}${{ steps.arg.outputs.arg-force-copy }}${{ steps.arg.outputs.arg-from-module }}${{ steps.arg.outputs.arg-get }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-lockfile }}${{ steps.arg.outputs.arg-migrate-state }}${{ steps.arg.outputs.arg-plugin-dir }}${{ steps.arg.outputs.arg-reconfigure }}${{ steps.arg.outputs.arg-test-directory }}${{ steps.arg.outputs.arg-upgrade }}"
         echo "${{ inputs.tool }} init${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
         ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} init${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
-
-    - if: ${{ inputs.arg-workspace != '' && contains(fromJSON('["plan", "apply", "init"]'), inputs.command) }}
-      id: workspace
-      shell: bash
-      run: |
-        # TF workspace select.
-        trap 'exit_code="$?"; echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"' EXIT
-        args="${{ steps.arg.outputs.arg-or-create }} ${{ inputs.arg-workspace }}"
-        echo "${{ inputs.tool }} workspace select${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
-        ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} workspace select${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
 
     - if: ${{ inputs.validate == 'true' && contains(fromJSON('["plan", "apply", "init"]'), inputs.command) }}
       id: validate
@@ -606,10 +597,6 @@ inputs:
   arg-no-tests:
     default: ""
     description: "no-tests"
-    required: false
-  arg-or-create:
-    default: "true"
-    description: "or-create"
     required: false
   arg-parallelism:
     default: ""

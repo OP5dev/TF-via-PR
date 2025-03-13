@@ -19,6 +19,8 @@ runs:
 
     - id: arg
       shell: bash
+      env:
+        TF_WORKSPACE: ${{ env.TF_WORKSPACE || inputs.arg-workspace }}
       run: |
         # Populate variables.
         # Environment variables.
@@ -27,8 +29,8 @@ runs:
         echo TF_CLI_ARGS=$([[ -n "${{ env.TF_CLI_ARGS }}" ]] && echo "${{ env.TF_CLI_ARGS }} -no-color" || echo "-no-color") >> "$GITHUB_ENV"
         echo TF_IN_AUTOMATION="true" >> "$GITHUB_ENV"
         echo TF_INPUT="false" >> "$GITHUB_ENV"
+        echo TF_WORKSPACE="$TF_WORKSPACE" >> "$GITHUB_ENV"
         if [[ "$GITHUB_SERVER_URL" != "https://github.com" ]]; then echo GH_HOST=$(echo "$GITHUB_SERVER_URL" | sed 's/.*:\/\///') >> "$GITHUB_ENV"; fi
-        if [[ -n "${{ inputs.arg-workspace }}" ]]; then echo "TF_WORKSPACE=${{ inputs.arg-workspace }}" >> "$GITHUB_ENV"; fi
 
         # CLI arguments.
         echo arg-auto-approve=$([[ -n "${{ inputs.arg-auto-approve }}" ]] && echo " -auto-approve" || echo "") >> "$GITHUB_OUTPUT"
@@ -67,7 +69,7 @@ runs:
         echo arg-var-file=$([[ -n "${{ inputs.arg-var-file }}" ]] && echo " -var-file=${{ inputs.arg-var-file }}" | sed "s/,/ -var-file=/g" || echo "") >> "$GITHUB_OUTPUT"
         echo arg-var=$([[ -n "${{ inputs.arg-var }}" ]] && echo " -var=${{ inputs.arg-var }}" | sed "s/,/ -var=/g" || echo "") >> "$GITHUB_OUTPUT"
         echo arg-write=$([[ -n "${{ inputs.arg-write }}" ]] && echo " -write=${{ inputs.arg-write }}" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-workspace=$([[ -n "${{ env.TF_WORKSPACE }}" ]] && echo " -workspace=${{ env.TF_WORKSPACE }}" || [[ -n "${{ inputs.arg-workspace }}" ]] && echo " -workspace=${{ inputs.arg-workspace }}" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-workspace=$([[ -n "$TF_WORKSPACE" ]] && echo " -workspace=$TF_WORKSPACE" || echo "") >> "$GITHUB_OUTPUT"
 
     - id: identifier
       env:

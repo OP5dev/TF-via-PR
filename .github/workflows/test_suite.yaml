@@ -3,7 +3,7 @@ name: Tests
 
 on:
   pull_request:
-    paths: [.github/workflows/tf_tests.yaml, action.yml, tests/**]
+    paths: [.github/workflows/test_suite.yaml, action.yml, tests/**]
     types: [opened, reopened, synchronize, closed]
 
 jobs:

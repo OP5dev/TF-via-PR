@@ -23,7 +23,7 @@ jobs:
           - tofu
           # - terraform
         test:
-          - pass_one
+          - directory: pass_one
           # - pass_character_limit
           # - fail_data_source_error
           # - fail_format_diff
@@ -59,11 +59,11 @@ jobs:
         continue-on-error: true
         uses: ./
         with:
-          working-directory: tests/${{ matrix.test }}
+          working-directory: tests/${{ matrix.test.directory }}
           arg-workspace: dev
           arg-lock: ${{ github.event.pull_request.merged }}
           arg-refresh: ${{ github.event.pull_request.merged && 'false' }}
-          command: apply # ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
+          command: ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
           comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
           format: true
           validate: true

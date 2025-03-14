@@ -169,10 +169,7 @@ runs:
         # Download plan file.
         # Get the artifact ID of the latest matching plan files for download.
         artifact_id=$(gh api /repos/${{ github.repository }}/actions/artifacts --header "$GH_API" --method GET --field "name=${{ steps.identifier.outputs.name }}" --jq '.artifacts[0].id' 2>/dev/null)
-        if [ -z "$artifact_id" ]; then
-          echo "Unable to locate plan file artifact: ${{ steps.identifier.outputs.name }}."
-          exit 1
-        fi
+        if [ -z "$artifact_id" ]; then echo "Unable to locate plan file: ${{ steps.identifier.outputs.name }}." && exit 1; fi
         gh api /repos/${{ github.repository }}/actions/artifacts/${artifact_id}/zip --header "$GH_API" --method GET > "${{ steps.identifier.outputs.name }}.zip"
 
         # Unzip the plan file to the working directory, then clean up the zip file.

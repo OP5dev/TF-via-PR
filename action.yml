@@ -215,7 +215,7 @@ runs:
         openssl enc -aes-256-ctr -pbkdf2 -salt -in "$path" -out "$path.encrypted" -pass file:"$temp_file"
         mv "$path.encrypted" "$path"
 
-    - if: ${{ inputs.command == 'plan' && github.server_url == 'https://github.com' }}
+    - if: ${{ inputs.command == 'plan' && inputs.upload-plan == 'true' && github.server_url == 'https://github.com' }}
       id: upload
       uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
       with:
@@ -224,7 +224,7 @@ runs:
         retention-days: ${{ inputs.retention-days }}
         overwrite: true
 
-    - if: ${{ inputs.command == 'plan' && github.server_url != 'https://github.com' }}
+    - if: ${{ inputs.command == 'plan' && inputs.upload-plan == 'true' && github.server_url != 'https://github.com' }}
       id: upload-v3
       uses: actions/upload-artifact@c24449f33cd45d4826c6702db7e49f7cdb9b551d # v3.2.1-node20
       with:
@@ -270,6 +270,7 @@ runs:
       if: ${{ !cancelled() && steps.identifier.outcome == 'success' && contains(fromJSON('["plan", "apply", "init"]'), inputs.command) }}
       env:
         exitcode: ${{ steps.apply.outputs.exit_code || steps.plan.outputs.exit_code || steps.validate.outputs.exit_code || steps.workspace.outputs.exit_code || steps.initialize.outputs.exit_code || steps.format.outputs.exit_code }}
+        PRESERVE_PLAN: ${{ inputs.preserve-plan }}
       shell: bash
       run: |
         # Post output.
@@ -409,8 +410,13 @@ runs:
           fi
         fi
 
+        # Optionally delete the plan file.
+        if [[ "$PRESERVE_PLAN" != "true" ]]; then
+          rm --force "${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}"
+        fi
+
         # Clean up files.
-        rm --force tf.command.txt tf.console.txt tf.diff.txt "${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}"
+        rm --force tf.command.txt tf.console.txt tf.diff.txt
 
 outputs:
   check-id:
@@ -487,6 +493,10 @@ inputs:
     default: "false"
     description: "Replace the plan file if it matches a newly-generated one to prevent stale apply (e.g., `false`)."
     required: false
+  preserve-plan:
+    default: "false"
+    description: "Preserve plan file in the given working directory after workflow execution (e.g., `false`)."
+    required: false
   retention-days:
     default: ""
     description: "Duration after which plan file artifact will expire in days (e.g., '90')."
@@ -506,6 +516,10 @@ inputs:
   tool:
     default: "terraform"
     description: "Provisioning tool to use between: `terraform` or `tofu` (e.g., `terraform`)."
+    required: false
+  upload-plan:
+    default: "true"
+    description: "Upload plan file as GitHub workflow artifact (e.g., `true`)."
     required: false
   validate:
     default: "false"

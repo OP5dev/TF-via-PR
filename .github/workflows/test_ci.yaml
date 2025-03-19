@@ -90,7 +90,7 @@ jobs:
           echo "summary: ${{ steps.tf.outputs.summary }}"
 
       - name: Echo TFplan
-        if: inputs.command == 'plan'
+        if: 'true' # on plan
         run: |
           ls -la tests/${{ matrix.test }}
           tofu -chdir=tests/${{ matrix.test }} show -no-color tfplan

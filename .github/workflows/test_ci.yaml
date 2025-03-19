@@ -59,7 +59,7 @@ jobs:
         continue-on-error: true
         uses: ./
         with:
-          plan-file: tests/${{ matrix.test }}/tfplan
+          plan-file: tests/${{ matrix.test }}/tfplain
           working-directory: tests/${{ matrix.test }}
           arg-workspace: dev
           arg-lock: ${{ github.event.pull_request.merged }}

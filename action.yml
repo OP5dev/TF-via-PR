@@ -165,9 +165,6 @@ runs:
     - if: ${{ inputs.command == 'apply' && inputs.arg-auto-approve != 'true' }}
       id: download
       shell: bash
-      env:
-        PLAN_ENCRYPT: ${{ inputs.plan-encrypt }}
-        path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       run: |
         # Download plan file.
         # Get the artifact ID of the latest matching plan files for download.
@@ -179,11 +176,6 @@ runs:
         unzip "${{ steps.identifier.outputs.name }}.zip" -d "${{ inputs.arg-chdir || inputs.working-directory }}"
         rm --force "${{ steps.identifier.outputs.name }}.zip"
 
-        # Rename the plan file if encrypted.
-        if [[ "$PLAN_ENCRYPT" != "" ]]; then
-          mv "$path.encrypted" "$path"
-        fi
-
     - if: ${{ inputs.plan-encrypt != '' && steps.download.outcome == 'success' }}
       env:
         pass: ${{ inputs.plan-encrypt }}
@@ -193,7 +185,7 @@ runs:
         # Decrypt plan file.
         temp_file=$(mktemp)
         printf "%s" "$pass" > "$temp_file"
-        openssl enc -aes-256-ctr -pbkdf2 -salt -in "$path" -out "$path.decrypted" -pass file:"$temp_file" -d
+        openssl enc -aes-256-ctr -pbkdf2 -salt -in "$path.encrypted" -out "$path.decrypted" -pass file:"$temp_file" -d
         mv "$path.decrypted" "$path"
 
     - if: ${{ steps.plan.outcome == 'success' || steps.download.outcome == 'success' }}

@@ -63,12 +63,12 @@ jobs:
           arg-workspace: dev
           arg-lock: ${{ github.event.pull_request.merged }}
           arg-refresh: ${{ github.event.pull_request.merged && 'false' }}
-          command: apply # ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
+          command: plan # ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
           comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
           format: true
           validate: true
           preserve-plan: true
-          plan-encrypt: secret
+          # plan-encrypt: secret
           retention-days: 1
           tag-actor: never
           tool: ${{ matrix.tool }}

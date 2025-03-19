@@ -68,7 +68,7 @@ jobs:
           format: true
           validate: true
           preserve-plan: true
-          plan-encrypt: secret
+          # plan-encrypt: secret
           retention-days: 1
           tag-actor: never
           tool: ${{ matrix.tool }}

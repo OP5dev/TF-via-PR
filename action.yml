@@ -166,7 +166,7 @@ runs:
         if [[ -n "$PLAN_FILE" ]]; then mv --force --verbose "$PLAN_FILE" "$path" 2>/dev/null && exit 0; fi
         ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} plan${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
 
-    - if: ${{ inputs.command == 'apply' && inputs.arg-auto-approve != 'true' }}
+    - if: ${{ inputs.command == 'apply' && inputs.arg-auto-approve != 'true' && inputs.plan-file == '' }}
       id: download
       shell: bash
       run: |
@@ -257,6 +257,9 @@ runs:
 
     - id: apply
       if: ${{ inputs.command == 'apply' }}
+      env:
+        PLAN_FILE: ${{ inputs.plan-file }}
+        path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       shell: bash
       run: |
         # TF apply.
@@ -267,6 +270,7 @@ runs:
           var_file="${{ steps.arg.outputs.arg-var-file }}"
           var="${{ steps.arg.outputs.arg-var }}"
         else
+          if [[ -n "$PLAN_FILE" ]]; then mv --force --verbose "$PLAN_FILE" "$path" 2>/dev/null && exit 0; fi
           plan=" tfplan"
           var_file=""
           var=""

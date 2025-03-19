@@ -165,6 +165,9 @@ runs:
     - if: ${{ inputs.command == 'apply' && inputs.arg-auto-approve != 'true' }}
       id: download
       shell: bash
+      env:
+        PLAN_ENCRYPT: ${{ inputs.plan-encrypt }}
+        path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       run: |
         # Download plan file.
         # Get the artifact ID of the latest matching plan files for download.
@@ -175,6 +178,11 @@ runs:
         # Unzip the plan file to the working directory, then clean up the zip file.
         unzip "${{ steps.identifier.outputs.name }}.zip" -d "${{ inputs.arg-chdir || inputs.working-directory }}"
         rm --force "${{ steps.identifier.outputs.name }}.zip"
+
+        # Rename the plan file if encrypted.
+        if [[ "$PLAN_ENCRYPT" != "" ]]; then
+          mv "$path.encrypted" "$path"
+        fi
 
     - if: ${{ inputs.plan-encrypt != '' && steps.download.outcome == 'success' }}
       env:

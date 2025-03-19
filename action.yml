@@ -253,8 +253,6 @@ runs:
         ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} plan${{ steps.arg.outputs.arg-destroy }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-generate-config-out }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }} -out=tfplan.parity
         ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} show -json tfplan.parity | jq --sort-keys '[.resource_changes[] | select(.change.actions != ["no-op"])]' > tfplan.new
         ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} show -json tfplan | jq --sort-keys '[.resource_changes[] | select(.change.actions != ["no-op"])]' > tfplan.old
-        echo "DIFF DIFF DIFF DIFF DIFF DIFF"
-        echo $(diff tfplan.new tfplan.old)
         # If both plan files are identical, then replace the old plan file with the new one to prevent avoidable stale apply.
         diff tfplan.new tfplan.old && mv --force --verbose "${{ format('{0}{1}tfplan.parity', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}" "${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}"
         rm --force tfplan.new tfplan.old "${{ format('{0}{1}tfplan.parity', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}"
@@ -279,8 +277,11 @@ runs:
           var_file=""
           var=""
         fi
+        echo "11111111111111"
         args="${{ steps.arg.outputs.arg-destroy }}${var_file}${var}${{ steps.arg.outputs.arg-backup }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-state-out }}${{ steps.arg.outputs.arg-state }}${{ steps.arg.outputs.arg-target }}${plan}"
+        echo "22222222222222"
         echo "${{ inputs.tool }} apply${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
+        echo "33333333333333"
         ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} apply${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
 
     - id: post

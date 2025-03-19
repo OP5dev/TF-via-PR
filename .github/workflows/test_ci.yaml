@@ -90,4 +90,5 @@ jobs:
           echo "summary: ${{ steps.tf.outputs.summary }}"
 
       - run: ls -la tests/${{ matrix.test }}
+
       # - run: tofu -chdir=tests/${{ matrix.test }} show -no-color tfplan

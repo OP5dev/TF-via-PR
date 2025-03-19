@@ -67,6 +67,7 @@ jobs:
           comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
           format: true
           validate: true
+          preserve-plan: true
           tag-actor: never
           tool: ${{ matrix.tool }}
 
@@ -88,4 +89,5 @@ jobs:
 
       - name: Echo TFplan
         run: |
+          la -la tests/${{ matrix.test }}
           tofu show -no-color tests/${{ matrix.test }}/${{ steps.tf.outputs.identifier }}

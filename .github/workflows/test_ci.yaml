@@ -74,6 +74,7 @@ jobs:
           tool: ${{ matrix.tool }}
 
       - name: Echo TF
+        continue-on-error: true
         run: |
           echo "check-id: ${{ steps.tf.outputs.check-id }}"
           echo "command: ${{ steps.tf.outputs.command }}"

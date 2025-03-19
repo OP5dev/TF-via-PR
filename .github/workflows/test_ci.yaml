@@ -63,7 +63,7 @@ jobs:
           arg-workspace: dev
           arg-lock: ${{ github.event.pull_request.merged }}
           arg-refresh: ${{ github.event.pull_request.merged && 'false' }}
-          command: plan # ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
+          command: apply # ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
           comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
           format: true
           validate: true
@@ -90,7 +90,7 @@ jobs:
           echo "summary: ${{ steps.tf.outputs.summary }}"
 
       - name: Echo TFplan
-        if: 'true' # on plan
+        if: 'false' # on plan
         run: |
           ls -la tests/${{ matrix.test }}
           tofu -chdir=tests/${{ matrix.test }} show -no-color tfplan

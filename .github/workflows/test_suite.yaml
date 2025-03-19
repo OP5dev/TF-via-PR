@@ -68,6 +68,7 @@ jobs:
           format: true
           validate: true
           preserve-plan: true
+          # plan-encrypt: secret
           tag-actor: never
           tool: ${{ matrix.tool }}
 
@@ -90,4 +91,4 @@ jobs:
       - name: Echo TFplan
         run: |
           ls -la tests/${{ matrix.test }}
-          tofu show -no-color tests/${{ matrix.test }}/${{ steps.tf.outputs.identifier }}
+          tofu show -no-color tests/${{ matrix.test }}/tfplan

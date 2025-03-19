@@ -21,13 +21,13 @@ jobs:
       matrix:
         tool:
           - tofu
-          # - terraform
+          - terraform
         test:
           - pass_one
-          # - pass_character_limit
-          # - fail_data_source_error
-          # - fail_format_diff
-          # - fail_invalid_resource_type
+          - pass_character_limit
+          - fail_data_source_error
+          - fail_format_diff
+          - fail_invalid_resource_type
 
     steps:
       - name: Echo context
@@ -88,4 +88,4 @@ jobs:
           echo "result: ${{ steps.tf.outputs.result }}"
           echo "run-url: ${{ steps.tf.outputs.run-url }}"
           echo "summary: ${{ steps.tf.outputs.summary }}"
-          tofu -chdir=tests/${{ matrix.test }} show -no-color tfplan
+          ${{ matrix.tool }} -chdir=tests/${{ matrix.test }} show -no-color tfplan

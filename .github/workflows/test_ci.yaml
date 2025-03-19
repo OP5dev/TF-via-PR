@@ -60,17 +60,20 @@ jobs:
         uses: ./
         with:
           working-directory: tests/${{ matrix.test }}
-          arg-workspace: dev
-          arg-lock: ${{ github.event.pull_request.merged }}
-          arg-refresh: ${{ github.event.pull_request.merged && 'false' }}
           command: ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
-          comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
+          arg-lock: ${{ github.event.pull_request.merged }}
+          arg-refresh: ${{ github.event.pull_request.merged && 'false' || 'true' }}
+          arg-workspace: dev
+
           format: true
           validate: true
-          preserve-plan: true
-          plan-parity: true
+
           plan-encrypt: ${{ secrets.TF_ENCRYPTION }}
+          plan-parity: true
+          preserve-plan: true
           retention-days: 1
+
+          comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
           tag-actor: never
           tool: ${{ matrix.tool }}
 

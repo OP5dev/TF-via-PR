@@ -67,8 +67,8 @@ jobs:
           comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
           format: true
           validate: true
-          preserve-plan: true
-          # plan-encrypt: secret
+          # preserve-plan: true
+          plan-encrypt: secret
           retention-days: 1
           tag-actor: never
           tool: ${{ matrix.tool }}

@@ -146,11 +146,10 @@ runs:
         ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} validate${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
 
     - if: ${{ inputs.label-pr == 'true' && steps.identifier.outputs.pr != 0 && contains(fromJSON('["plan", "apply"]'), inputs.command) }}
-      continue-on-error: true
       shell: bash
       run: |
         # Label PR.
-        gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/labels --header "$GH_API" --method POST --field "labels[]=tf:${{ inputs.command }}"
+        gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/labels --header "$GH_API" --method POST --silent --field "labels[]=tf:${{ inputs.command }}"
 
     - if: ${{ inputs.command == 'plan' }}
       id: plan
@@ -254,7 +253,6 @@ runs:
         # If both plan files are identical, then replace the old plan file with the new one to prevent avoidable stale apply.
         diff tfplan.new tfplan.old && mv --force --verbose "${{ format('{0}{1}tfplan.parity', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}" "${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}"
         rm --force tfplan.new tfplan.old "${{ format('{0}{1}tfplan.parity', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}"
-
 
     - id: apply
       if: ${{ inputs.command == 'apply' }}

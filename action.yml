@@ -266,13 +266,13 @@ runs:
       run: |
         # TF apply.
         trap 'exit_code="$?"; echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"' EXIT
-        # If ${{ inputs.arg-auto-approve }} is true, then then pass in variables, otherwise pass in the plan file without variables.
+        # If arg-auto-approve is true, then pass in variables, otherwise pass in the plan file without variables.
         if [[ "${{ inputs.arg-auto-approve }}" == "true" ]]; then
           plan="${{ steps.arg.outputs.arg-auto-approve }}"
           var_file="${{ steps.arg.outputs.arg-var-file }}"
           var="${{ steps.arg.outputs.arg-var }}"
         else
-          if [[ -n "$PLAN_FILE" ]]; then mv --force --verbose "$PLAN_FILE" "$path" 2>/dev/null; fi
+          # if [[ -n "$PLAN_FILE" ]]; then mv --force --verbose "$PLAN_FILE" "$path" 2>/dev/null; fi
           plan=" tfplan"
           var_file=""
           var=""

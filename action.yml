@@ -205,6 +205,7 @@ runs:
 
     - if: ${{ inputs.plan-encrypt != '' && steps.plan.outcome == 'success' }}
       env:
+        PRESERVE_PLAN: ${{ inputs.preserve-plan }}
         pass: ${{ inputs.plan-encrypt }}
         path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       shell: bash
@@ -214,12 +215,17 @@ runs:
         printf "%s" "$pass" > "$temp_file"
         openssl enc -aes-256-ctr -pbkdf2 -salt -in "$path" -out "$path.encrypted" -pass file:"$temp_file"
 
+        # Optionally delete the plan file.
+        if [[ "$PRESERVE_PLAN" != "true" ]]; then
+          rm --force "$path"
+        fi
+
     - if: ${{ inputs.command == 'plan' && inputs.upload-plan == 'true' && github.server_url == 'https://github.com' }}
       id: upload
       uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
       with:
         name: ${{ steps.identifier.outputs.name }}
-        path: ${{ format('{0}{1}tfplan{2}', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || ''), inputs.plan-encrypt != '' && '.encrypted' || '' }}
+        path: ${{ format('{0}{1}tfplan{2}', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '', inputs.plan-encrypt != '' && '.encrypted' || '') }}
         retention-days: ${{ inputs.retention-days }}
         overwrite: true
 

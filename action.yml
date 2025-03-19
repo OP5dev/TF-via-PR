@@ -261,6 +261,7 @@ runs:
       if: ${{ inputs.command == 'apply' }}
       env:
         PLAN_FILE: ${{ inputs.plan-file }}
+        PLAN_PARITY: ${{ inputs.plan-parity }}
         path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       shell: bash
       run: |
@@ -273,7 +274,7 @@ runs:
           var="${{ steps.arg.outputs.arg-var }}"
         else
           ls -la ${{ inputs.working-directory }}
-          if [[ -n "$PLAN_FILE" ]]; then mv --force --verbose "$PLAN_FILE" "$path" 2>/dev/null; fi
+          if [[ -n "$PLAN_FILE" && "$PLAN_PARITY" != "true" ]]; then mv --force --verbose "$PLAN_FILE" "$path" 2>/dev/null; fi
           plan=" tfplan"
           var_file=""
           var=""

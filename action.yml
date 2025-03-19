@@ -18,9 +18,9 @@ runs:
         if [[ "${{ inputs.plan-parity }}" ]]; then which diff > /dev/null 2>&1 || { echo "Please install diff before running this action as it is required for comparing plan file parity."; exit 1; }; fi
 
     - id: arg
-      shell: bash
       env:
         TF_WORKSPACE: ${{ env.TF_WORKSPACE || inputs.arg-workspace }}
+      shell: bash
       run: |
         # Populate variables.
         # Environment variables.
@@ -154,9 +154,13 @@ runs:
 
     - if: ${{ inputs.command == 'plan' }}
       id: plan
+      env:
+        PLAN_FILE: ${{ inputs.plan-file }}
+        path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       shell: bash
       run: |
         # TF plan.
+        if [[ -n "$PLAN_FILE" ]]; then mv "$PLAN_FILE" "$path" && exit 0; fi
         trap 'exit_code="$?"; echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"; if [[ "$exit_code" == "2" ]]; then exit 0; fi' EXIT
         args="${{ steps.arg.outputs.arg-destroy }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-detailed-exitcode }}${{ steps.arg.outputs.arg-generate-config-out }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }} -out=tfplan"
         echo "${{ inputs.tool }} plan${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
@@ -493,6 +497,10 @@ inputs:
   plan-encrypt:
     default: ""
     description: "Encrypt plan file artifact with the given input (e.g., `secrets.PASSPHRASE`)."
+    required: false
+  plan-file:
+    default: ""
+    description: "Supply existing plan file path instead of the auto-generated one (e.g., `path/to/file.tfplan`)."
     required: false
   plan-parity:
     default: "false"

@@ -1,5 +1,5 @@
 ---
-name: Tests
+name: Test CI
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
     types: [opened, reopened, synchronize, closed]
 
 jobs:
-  tests:
+  ci:
     runs-on: ubuntu-24.04
 
     permissions:

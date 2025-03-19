@@ -163,7 +163,7 @@ runs:
         trap 'exit_code="$?"; echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"; if [[ "$exit_code" == "2" ]]; then exit 0; fi' EXIT
         args="${{ steps.arg.outputs.arg-destroy }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-detailed-exitcode }}${{ steps.arg.outputs.arg-generate-config-out }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }} -out=tfplan"
         echo "${{ inputs.tool }} plan${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
-        if [[ -n "$PLAN_FILE" ]]; then mv --force --verbose "$PLAN_FILE" "$path" && exit 0; fi
+        if [[ -n "$PLAN_FILE" ]]; then mv --force --verbose "$PLAN_FILE" "$path" 2>/dev/null && exit 0; fi
         ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} plan${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
 
     - if: ${{ inputs.command == 'apply' && inputs.arg-auto-approve != 'true' }}

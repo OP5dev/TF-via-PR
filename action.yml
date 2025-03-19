@@ -240,7 +240,7 @@ runs:
         path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
         retention-days: ${{ inputs.retention-days }}
 
-    - if: ${{ inputs.plan-parity == 'true' && steps.download.outcome == 'success' }}
+    - if: ${{ inputs.plan-parity == 'true' && (steps.download.outcome == 'success' || inputs.plan-file != '') }}
       shell: bash
       run: |
         # TF plan parity.

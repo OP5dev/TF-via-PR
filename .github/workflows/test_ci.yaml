@@ -63,12 +63,12 @@ jobs:
           arg-workspace: dev
           arg-lock: ${{ github.event.pull_request.merged }}
           arg-refresh: ${{ github.event.pull_request.merged && 'false' }}
-          command: apply # ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
+          command: ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
           comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
           format: true
           validate: true
           preserve-plan: true
-          # plan-encrypt: secret
+          plan-encrypt: ${{ secrets.TF_ENCRYPTION }}
           retention-days: 1
           tag-actor: never
           tool: ${{ matrix.tool }}
@@ -88,7 +88,4 @@ jobs:
           echo "result: ${{ steps.tf.outputs.result }}"
           echo "run-url: ${{ steps.tf.outputs.run-url }}"
           echo "summary: ${{ steps.tf.outputs.summary }}"
-
-      - run: ls -la tests/${{ matrix.test }}
-
-      # - run: tofu -chdir=tests/${{ matrix.test }} show -no-color tfplan
+          tofu -chdir=tests/${{ matrix.test }} show -no-color tfplan

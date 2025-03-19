@@ -89,5 +89,5 @@ jobs:
 
       - name: Echo TFplan
         run: |
-          la -la tests/${{ matrix.test }}
+          ls -la tests/${{ matrix.test }}
           tofu show -no-color tests/${{ matrix.test }}/${{ steps.tf.outputs.identifier }}

@@ -165,7 +165,7 @@ All supported CLI argument inputs are [listed below](#arguments) with accompanyi
 | Check    | `validate`          | Check validation of TF code.</br>Default: `false`                                                                                         |
 | Check    | `plan-parity`       | Replace plan file if it matches a newly-generated one to prevent stale apply.<sup>2</sup></br>Default: `false`                            |
 | Security | `plan-encrypt`      | Encrypt plan file artifact with the given input.<sup>3</sup></br>Example: `${{ secrets.PASSPHRASE }}`                                     |
-| Security | `preserve-plan`     | Preserve plan file in the given working directory after workflow execution.</br>Default: `false`                                          |
+| Security | `preserve-plan`     | Preserve plan file "tfplan" in the given working directory after workflow execution.</br>Default: `false`                                 |
 | Security | `upload-plan`       | Upload plan file as GitHub workflow artifact.</br>Default: `true`                                                                         |
 | Security | `retention-days`    | Duration after which plan file artifact will expire in days.</br>Example: `90`                                                            |
 | Security | `token`             | Specify a GitHub token.</br>Default: `${{ github.token }}`                                                                                |

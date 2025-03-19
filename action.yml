@@ -160,12 +160,10 @@ runs:
       shell: bash
       run: |
         # TF plan.
-        echo "HELLO WORLD 1"
-        if [[ -n "$PLAN_FILE" ]]; then mv "$PLAN_FILE" "$path" && exit 0; fi
-        echo "HELLO WORLD 2"
         trap 'exit_code="$?"; echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"; if [[ "$exit_code" == "2" ]]; then exit 0; fi' EXIT
         args="${{ steps.arg.outputs.arg-destroy }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-detailed-exitcode }}${{ steps.arg.outputs.arg-generate-config-out }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }} -out=tfplan"
         echo "${{ inputs.tool }} plan${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
+        if [[ -n "$PLAN_FILE" ]]; then mv --force --verbose "$PLAN_FILE" "$path" 2>/dev/null && exit 0; fi
         ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} plan${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
 
     - if: ${{ inputs.command == 'apply' && inputs.arg-auto-approve != 'true' }}
@@ -192,7 +190,7 @@ runs:
         temp_file=$(mktemp)
         printf "%s" "$pass" > "$temp_file"
         openssl enc -aes-256-ctr -pbkdf2 -salt -in "$path.encrypted" -out "$path.decrypted" -pass file:"$temp_file" -d
-        mv "$path.decrypted" "$path"
+        mv --force --verbose "$path.decrypted" "$path"
 
     - if: ${{ steps.plan.outcome == 'success' || steps.download.outcome == 'success' }}
       shell: bash
@@ -254,7 +252,7 @@ runs:
         ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} show -json tfplan | jq --sort-keys '[.resource_changes[] | select(.change.actions != ["no-op"])]' > tfplan.old
 
         # If both plan files are identical, then replace the old plan file with the new one to prevent avoidable stale apply.
-        diff tfplan.new tfplan.old && mv "${{ format('{0}{1}tfplan.parity', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}" "${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}"
+        diff tfplan.new tfplan.old && mv --force --verbose "${{ format('{0}{1}tfplan.parity', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}" "${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}"
         rm --force tfplan.new tfplan.old "${{ format('{0}{1}tfplan.parity', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}"
 
     - id: apply

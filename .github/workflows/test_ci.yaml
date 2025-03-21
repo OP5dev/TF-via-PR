@@ -3,7 +3,7 @@ name: Test CI
 
 on:
   pull_request:
-    paths: [.github/workflows/test_suite.yaml, action.yml, tests/**]
+    paths: [.github/workflows/test_ci.yaml, action.yml, tests/**]
     types: [opened, reopened, synchronize, closed]
 
 jobs:

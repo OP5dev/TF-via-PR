@@ -234,7 +234,7 @@ runs:
 
     - if: ${{ inputs.command == 'plan' && inputs.upload-plan == 'true' && github.server_url != 'https://github.com' }}
       id: upload-v3
-      uses: actions/upload-artifact@v3.2.1-node20
+      uses: actions/upload-artifact@v3.2.1
       with:
         name: ${{ steps.identifier.outputs.name }}
         path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}

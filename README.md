@@ -140,12 +140,12 @@ Before the workflow uploads the plan file as an artifact, it can be encrypted-at
 In order to decrypt the plan file locally, use the following commands after downloading the artifact (adding a whitespace before `openssl` to prevent recording the command in shell history):
 
 ```fish
-unzip <tf.plan>
+unzip <tfplan.zip>
 openssl enc -d -aes-256-ctr -pbkdf2 -salt \
-  -in <tf.plan> \
-  -out tf.plan.decrypted \
+  -in   tfplan.encrypted \
+  -out  tfplan.decrypted \
   -pass pass:"<passphrase>"
-<tf.tool> show tf.plan.decrypted
+<tf.tool> show tfplan.decrypted
 ```
 
 </br>

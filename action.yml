@@ -344,7 +344,7 @@ runs:
           echo "diff<<EODIFFTFVIAPR"$'\n'"$diff_truncated"$'\n'EODIFFTFVIAPR >> "$GITHUB_OUTPUT"
 
           diff="
-        <details${{ inputs.comment-pr-open-diff-view == 'true' && ' open' || '' }}><summary>Diff of ${diff_count} ${diff_change}.</summary>
+        <details${{ inputs.expand-diff == 'true' && ' open' || '' }}><summary>Diff of ${diff_count} ${diff_change}.</summary>
 
         \`\`\`diff
         ${diff_truncated}
@@ -374,7 +374,7 @@ runs:
         <!-- placeholder-2 -->
         ${diff}
         <!-- placeholder-3 -->
-        <details${{ inputs.comment-pr-open-log-view == 'true' && ' open' || '' }}><summary>${summary}</br>
+        <details${{ inputs.expand-summary == 'true' && ' open' || '' }}><summary>${summary}</br>
 
         <!-- placeholder-4 -->
         ###### By ${handle}${{ github.triggering_actor }} at ${{ github.event.pull_request.updated_at || github.event.comment.created_at || github.event.head_commit.timestamp || github.event.merge_group.head_commit.timestamp }} [(view log)](${run_url}).
@@ -489,13 +489,13 @@ inputs:
     default: "always"
     description: "Add a PR comment: `always`, `on-change`, or `never` (e.g., `always`)."
     required: false
-  comment-pr-open-diff-view:
+  expand-diff:
     default: "false"
-    description: "Whether the PR comment should auto-open the short resource diff view's disclosure triangle (e.g., `false`)."
+    description: "Expand the collapsible diff output section (e.g., `false`)."
     required: false
-  comment-pr-open-log-view:
+  expand-summary:
     default: "false"
-    description: "Whether the PR comment should auto-open the detailed log view's disclosure triangle (e.g., `false`)."
+    description: "Expand the collapsible summary output section (e.g., `false`)."
     required: false
   format:
     default: "false"

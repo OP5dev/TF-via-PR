@@ -73,6 +73,9 @@ jobs:
           preserve-plan: true
           retention-days: 1
 
+          expand-diff: true
+          expand-summary: true
+
           comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
           tag-actor: never
           tool: ${{ matrix.tool }}

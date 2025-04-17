@@ -108,6 +108,19 @@ runs:
           # For matrix jobs, join the matrix values with comma separator into a single string and get the ID of the job which contains it.
           matrix=$(echo "$GH_MATRIX" | jq --raw-output 'to_entries | map(if .value | type == "object" then (.value | to_entries[0].value) else .value end) | join(", ")')
           job_id=$(echo "$workflow_run" | jq --raw-output --arg matrix "$matrix" '.jobs[] | select(.name | contains($matrix)) | .id' | tail -n 1)
+          # For a dynamic matrix, sometimes the job may not be visible in the API at the start. We'll retry with exponential backoff.
+          retry_interval=1
+          while [[ -z "$job_id" ]]; do
+            if [[ $retry_interval -gt 64 ]]; then
+              echo "Unable to locate job ID for matrix: $matrix."
+              exit 1
+            fi
+            echo "Waiting to locate job ID; will try again in $retry_interval seconds."
+            sleep "$retry_interval"
+            retry_interval=$((retry_interval * 2))
+            workflow_run=$(gh api /repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}/jobs --header "$GH_API" --method GET --field per_page=100)
+            job_id=$(echo "$workflow_run" | jq --raw-output --arg matrix "$matrix" '.jobs[] | select(.name | contains($matrix)) | .id' | tail -n 1)
+          done
         fi
         echo "job=$job_id" >> "$GITHUB_OUTPUT"
 

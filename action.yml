@@ -159,6 +159,7 @@ runs:
         ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} validate${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
 
     - if: ${{ inputs.label-pr == 'true' && steps.identifier.outputs.pr != 0 && contains(fromJSON('["plan", "apply"]'), inputs.command) }}
+      continue-on-error: true
       shell: bash
       run: |
         # Label PR.

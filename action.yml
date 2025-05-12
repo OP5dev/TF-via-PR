@@ -237,7 +237,7 @@ runs:
           rm --force "$path"
         fi
 
-    - if: ${{ inputs.command == 'plan' && inputs.upload-plan == 'true' && github.server_url == 'https://github.com' }}
+    - if: ${{ inputs.command == 'plan' && inputs.upload-plan == 'true' && (github.server_url == 'https://github.com' || contains(github.server_url, '.ghe.com')) }}
       id: upload
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
@@ -246,7 +246,7 @@ runs:
         retention-days: ${{ inputs.retention-days }}
         overwrite: true
 
-    - if: ${{ inputs.command == 'plan' && inputs.upload-plan == 'true' && github.server_url != 'https://github.com' }}
+    - if: ${{ inputs.command == 'plan' && inputs.upload-plan == 'true' && !(github.server_url == 'https://github.com' || contains(github.server_url, '.ghe.com')) }}
       id: upload-v3
       uses: actions/upload-artifact@c24449f33cd45d4826c6702db7e49f7cdb9b551d # v3.2.1-node20
       with:

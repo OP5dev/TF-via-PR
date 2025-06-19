@@ -281,11 +281,14 @@ Applicable only when `validate: true`.
 
 ## Security
 
-View [security policy and reporting instructions](SECURITY.md).
+View [security policy and reporting instructions](SECURITY.md). Integrating security in your CI/CD pipeline is critical to practicing DevSecOps. This action aims to be secure by default, and it should be complemented with your own review to ensure it meets your (organization's) security requirements.
+
+- Restrict changes to certain environments with [deployment protection rules](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment#deployment-protection-rules "Configuring environment deployment protection rules.").
+- Integrate with [OpenID Connect](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-cloud-providers "Configuring OpenID Connect in cloud providers.") by passing short-lived credentials as environment variables.
 
 > [!TIP]
 >
-> Pin your workflow version to a specific release tag or SHA to harden your CI/CD pipeline security against supply chain attacks.
+> Pin your GitHub Action to a [commit SHA](https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-third-party-actions "Security hardening for GitHub Actions.") to harden your CI/CD **pipeline security** against supply chain attacks.
 
 </br>
 

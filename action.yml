@@ -24,13 +24,13 @@ runs:
       run: |
         # Populate variables.
         # Environment variables.
-        echo GH_API="X-GitHub-Api-Version:2022-11-28" >> "$GITHUB_ENV"
-        echo GH_TOKEN="${{ inputs.token }}" >> "$GITHUB_ENV"
-        echo TF_CLI_ARGS=$([[ -n "${{ env.TF_CLI_ARGS }}" ]] && echo "${{ env.TF_CLI_ARGS }} -no-color" || echo "-no-color") >> "$GITHUB_ENV"
-        echo TF_IN_AUTOMATION="true" >> "$GITHUB_ENV"
-        echo TF_INPUT="false" >> "$GITHUB_ENV"
-        echo TF_WORKSPACE="$TF_WORKSPACE" >> "$GITHUB_ENV"
-        if [[ "$GITHUB_SERVER_URL" != "https://github.com" ]]; then echo GH_HOST=$(echo "$GITHUB_SERVER_URL" | sed 's/.*:\/\///') >> "$GITHUB_ENV"; fi
+        echo "GH_API=X-GitHub-Api-Version:2022-11-28" >> "$GITHUB_ENV"
+        echo "GH_TOKEN=${{ inputs.token }}" >> "$GITHUB_ENV"
+        echo "TF_CLI_ARGS=$([[ -n "${{ env.TF_CLI_ARGS }}" ]] && echo "${{ env.TF_CLI_ARGS }} -no-color" || echo "-no-color")" >> "$GITHUB_ENV"
+        echo "TF_IN_AUTOMATION=true" >> "$GITHUB_ENV"
+        echo "TF_INPUT=false" >> "$GITHUB_ENV"
+        echo "TF_WORKSPACE=$TF_WORKSPACE" >> "$GITHUB_ENV"
+        echo "GH_HOST=$(echo $GITHUB_SERVER_URL | sed 's/.*:\/\///')" >> "$GITHUB_ENV"
 
         # CLI arguments.
         echo arg-auto-approve=$([[ -n "${{ inputs.arg-auto-approve }}" ]] && echo " -auto-approve" || echo "") >> "$GITHUB_OUTPUT"

@@ -158,13 +158,6 @@ runs:
         echo "${{ inputs.tool }} validate${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
         ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} validate${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
 
-    - if: ${{ inputs.label-pr == 'true' && steps.identifier.outputs.pr != 0 && contains(fromJSON('["plan", "apply"]'), inputs.command) }}
-      continue-on-error: true
-      shell: bash
-      run: |
-        # Label PR.
-        gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/labels --header "$GH_API" --method POST --silent --field "labels[]=tf:${{ inputs.command }}"
-
     - if: ${{ inputs.command == 'plan' }}
       id: plan
       env:
@@ -518,10 +511,6 @@ inputs:
   hide-args:
     default: "detailed-exitcode,parallelism,lock,out,var="
     description: "Hide comma-separated arguments from the command input (e.g., `detailed-exitcode,lock,out,var=`)."
-    required: false
-  label-pr:
-    default: "true"
-    description: "Add a PR label with the command input (e.g., `true`)."
     required: false
   plan-encrypt:
     default: ""

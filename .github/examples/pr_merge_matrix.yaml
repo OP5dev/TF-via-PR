@@ -13,7 +13,7 @@ jobs:
       actions: read        # Required to identify workflow run.
       checks: write        # Required to add status summary.
       contents: read       # Required to checkout repository.
-      pull-requests: write # Required to add comment and label.
+      pull-requests: write # Required to add PR comment.
 
     strategy:
       fail-fast: false

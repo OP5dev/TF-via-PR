@@ -14,7 +14,7 @@ jobs:
       checks: write        # Required to add status summary.
       contents: read       # Required to checkout repository.
       issues: write        # Required to open issue.
-      pull-requests: write # Required to add comment and label.
+      pull-requests: write # Required to add PR comment.
 
     steps:
       - name: Checkout repository

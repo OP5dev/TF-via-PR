@@ -72,8 +72,6 @@ runs:
         echo arg-workspace=$([[ -n "$TF_WORKSPACE" ]] && echo " -workspace=$TF_WORKSPACE" || echo "") >> "$GITHUB_OUTPUT"
 
     - id: identifier
-      env:
-        GH_MATRIX: ${{ toJSON(matrix) }}
       shell: bash
       run: |
         # Unique identifier.
@@ -95,38 +93,6 @@ runs:
         identifier="${{ steps.arg.outputs.arg-chdir }}${{ steps.arg.outputs.arg-workspace }}${{ steps.arg.outputs.arg-backend-config }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }}${{ steps.arg.outputs.arg-destroy }}"
         identifier=$(echo -n "$identifier" | md5sum | awk '{print $1}')
         echo "name=${{ inputs.tool }}-${pr_number}-${identifier}.tfplan" >> "$GITHUB_OUTPUT"
-
-        # List jobs from the current workflow run.
-        workflow_run=$(gh api /repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}/jobs --header "$GH_API" --method GET --field per_page=100)
-
-        # Get the current job ID from the workflow run using different query methods for matrix and regular jobs.
-        if [[ "$GH_MATRIX" == "null" ]]; then
-          # For regular jobs, get the ID of the job with the same name as job_id (lowercase and '-' or '_' replaced with ' ').
-          # Otherwise, get the ID of the first job in the list as a fallback.
-          job_id=$(echo "$workflow_run" | jq --raw-output '(.jobs[] | select((.name | ascii_downcase | gsub("-|_"; " ")) == (env.GITHUB_JOB | ascii_downcase | gsub("-|_"; " "))) | .id) // .jobs[0].id' | tail -n 1)
-        else
-          # For matrix jobs, join the matrix values with comma separator into a single string and get the ID of the job which contains it.
-          matrix=$(echo "$GH_MATRIX" | jq --raw-output 'to_entries | map(if .value | type == "object" then (.value | to_entries[0].value) else .value end) | join(", ")')
-          job_id=$(echo "$workflow_run" | jq --raw-output --arg matrix "$matrix" '.jobs[] | select(.name | contains($matrix)) | .id' | tail -n 1)
-          # For dynamic matrix jobs, retry with exponential backoff until the job ID is found or a timeout occurs.
-          retry_interval=1
-          while [[ -z "$job_id" ]]; do
-            if [[ $retry_interval -gt 64 ]]; then
-              echo "Unable to locate job ID for matrix: $matrix."
-              exit 1
-            fi
-            echo "Waiting to locate job ID; will try again in $retry_interval seconds."
-            sleep "$retry_interval"
-            retry_interval=$((retry_interval * 2))
-            workflow_run=$(gh api /repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}/jobs --header "$GH_API" --method GET --field per_page=100)
-            job_id=$(echo "$workflow_run" | jq --raw-output --arg matrix "$matrix" '.jobs[] | select(.name | contains($matrix)) | .id' | tail -n 1)
-          done
-        fi
-        echo "job=$job_id" >> "$GITHUB_OUTPUT"
-
-        # Get the step number that has status "in_progress" from the current job.
-        workflow_step=$(echo "$workflow_run" | jq --raw-output --arg job_id "$job_id" '.jobs[] | select(.id == ($job_id | tonumber)) | .steps[] | select(.status == "in_progress") | .number')
-        echo "step=$workflow_step" >> "$GITHUB_OUTPUT"
 
     - if: ${{ inputs.format == 'true' }}
       id: format
@@ -293,6 +259,7 @@ runs:
       if: ${{ !cancelled() && steps.identifier.outcome == 'success' && contains(fromJSON('["plan", "apply", "init"]'), inputs.command) }}
       env:
         exitcode: ${{ steps.apply.outputs.exit_code || steps.plan.outputs.exit_code || steps.validate.outputs.exit_code || steps.workspace.outputs.exit_code || steps.initialize.outputs.exit_code || steps.format.outputs.exit_code }}
+        GH_MATRIX: ${{ toJSON(matrix) }}
         PRESERVE_PLAN: ${{ inputs.preserve-plan }}
       shell: bash
       run: |
@@ -330,13 +297,44 @@ runs:
         syntax="hcl"
         if [[ "${{ steps.format.outcome }}" == "failure" ]]; then syntax="diff"; fi
 
+        # List jobs from the current workflow run.
+        workflow_run=$(gh api /repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}/jobs --header "$GH_API" --method GET --field per_page=100)
+
+        # Get the current job ID from the workflow run using different query methods for matrix and regular jobs.
+        if [[ "$GH_MATRIX" == "null" ]]; then
+          # For regular jobs, get the ID of the job with the same name as job_id (lowercase and '-' or '_' replaced with ' ').
+          # Otherwise, get the ID of the first job in the list as a fallback.
+          job_id=$(echo "$workflow_run" | jq --raw-output '(.jobs[] | select((.name | ascii_downcase | gsub("-|_"; " ")) == (env.GITHUB_JOB | ascii_downcase | gsub("-|_"; " "))) | .id) // .jobs[0].id' | tail -n 1)
+        else
+          # For matrix jobs, join the matrix values with comma separator into a single string and get the ID of the job which contains it.
+          matrix=$(echo "$GH_MATRIX" | jq --raw-output 'to_entries | map(if .value | type == "object" then (.value | to_entries[0].value) else .value end) | join(", ")')
+          job_id=$(echo "$workflow_run" | jq --raw-output --arg matrix "$matrix" '.jobs[] | select(.name | contains($matrix)) | .id' | tail -n 1)
+          # For dynamic matrix jobs, retry with exponential backoff until the job ID is found or a timeout occurs.
+          retry_interval=1
+          while [[ -z "$job_id" ]]; do
+            if [[ $retry_interval -gt 64 ]]; then
+              echo "Unable to locate job ID for matrix: $matrix."
+              exit 1
+            fi
+            echo "Waiting to locate job ID; will try again in $retry_interval seconds."
+            sleep "$retry_interval"
+            retry_interval=$((retry_interval * 2))
+            workflow_run=$(gh api /repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}/jobs --header "$GH_API" --method GET --field per_page=100)
+            job_id=$(echo "$workflow_run" | jq --raw-output --arg matrix "$matrix" '.jobs[] | select(.name | contains($matrix)) | .id' | tail -n 1)
+          done
+        fi
+        echo "job=$job_id" >> "$GITHUB_OUTPUT"
+
         # Add summary to the job status.
-        check_run=$(gh api /repos/${{ github.repository }}/check-runs/${{ steps.identifier.outputs.job }} --header "$GH_API" --method PATCH --field "output[title]=${summary}" --field "output[summary]=${summary}")
+        check_run=$(gh api /repos/${{ github.repository }}/check-runs/${job_id} --header "$GH_API" --method PATCH --field "output[title]=${summary}" --field "output[summary]=${summary}")
+
+        # Get the step number that has status "in_progress" from the current job.
+        workflow_step=$(echo "$workflow_run" | jq --raw-output --arg job_id "$job_id" '.jobs[] | select(.id == ($job_id | tonumber)) | .steps[] | select(.status == "in_progress") | .number')
 
         # From "check_run", echo "html_url".
         check_url=$(echo "$check_run" | jq --raw-output '.html_url')
         echo "check_id=$(echo "$check_run" | jq --raw-output '.id')" >> "$GITHUB_OUTPUT"
-        run_url=$(echo ${check_url}#step:${{ steps.identifier.outputs.step }}:1)
+        run_url=$(echo ${check_url}#step:${workflow_step}:1)
         echo "run_url=$run_url" >> "$GITHUB_OUTPUT"
 
         # If "tf.diff.txt" exists, display it within a "diff" block, truncated for character limit.
@@ -465,7 +463,7 @@ outputs:
     value: ${{ steps.identifier.outputs.name }}
   job-id:
     description: "ID of the workflow job."
-    value: ${{ steps.identifier.outputs.job }}
+    value: ${{ steps.post.outputs.job }}
   plan-id:
     description: "ID of the plan file artifact."
     value: ${{ steps.upload.outputs.artifact-id || steps.upload-v3.outputs.artifact-id }}

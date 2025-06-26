@@ -13,6 +13,12 @@ ec2_instance = {
     ubuntu_type    = "server"
     ubuntu_version = "24.04"
   }
+  square = {
+    name_suffix    = "squid"
+    instance_type  = "t2.micro"
+    ubuntu_type    = "server"
+    ubuntu_version = "24.04"
+  }
 }
 
 s3_bucket = {

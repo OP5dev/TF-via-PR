@@ -17,11 +17,11 @@ ec2_instance = {
 
 s3_bucket = {
   teal = {
-    name_suffix    = "tyler"
+    name_suffix    = "jonny"
     retention_days = 5
   }
-jonny = {
-    name_suffix    = "tyler"
+  joan = {
+    name_suffix    = "jonny"
     retention_days = 5
   }
 }

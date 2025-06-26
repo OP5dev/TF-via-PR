@@ -108,6 +108,37 @@ jobs:
           tag-actor: never
           tool: tofu
 
+      - name: Troubleshoot TF
+        if: ${{ failure() && github.event_name == 'merge_group' }}
+        uses: op5dev/prompt-ai@4cacb93e4a1e101f3a89650b31a3582321f2461d # v2.0.0
+        with:
+          model: openai/gpt-4.1-mini
+          system-prompt: You are a helpful DevOps assistant and expert at troubleshooting Terraform errors.
+          user-prompt: Troubleshoot the following Terraform output; ${{ steps.tf.outputs.result }}
+
+      - name: Clear directory
+        if: ${{ failure() && github.event_name == 'merge_group' }}
+        run: find ${{ github.workspace }} -mindepth 1 -delete
+
+      - name: Checkout main
+        if: ${{ failure() && github.event_name == 'merge_group' }}
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Rollback TF
+        if: ${{ failure() && github.event_name == 'merge_group' }}
+        uses: ./
+        with:
+          working-directory: tests/aws/targets/${{ matrix.target }}
+          command: apply
+          arg-auto-approve: true
+          arg-lock-timeout: 3m
+
+          comment-pr: false
+          tool: tofu
+
   Notify:
     runs-on: [ubuntu-24.04]
     needs: [Target, TF]

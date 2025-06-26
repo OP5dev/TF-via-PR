@@ -36,8 +36,6 @@ jobs:
           # Output changed targets.
           changed=$(gh api /repos/${{ github.repository }}/pulls/${PR_NUMBER}/files --paginate --jq '.[].filename')
           echo "targets=$(echo "$changed" | jq -R 'select(test("^tests/aws/targets/")) | split("/")[3]' | jq -c -s 'unique | sort')" >> $GITHUB_OUTPUT
-          # Add "tf-modules" PR label if "modules/" is changed.
-          if [[ "$changed" == *"modules/"* ]]; then gh api /repos/${{ github.repository }}/issues/${PR_NUMBER}/labels --method POST --field "labels[]=tf-modules" --silent; fi
 
   TF:
     runs-on: ubuntu-24.04
@@ -67,8 +65,8 @@ jobs:
       - name: Authenticate AWS
         uses: aws-actions/configure-aws-credentials@b47578312673ae6fa5b5096b330d9fbac3d116df # v4.2.1
         with:
-          aws-region: us-west-1
-          role-to-assume: arn:aws:iam::813676077823:role/terraform-oidc
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ vars.AWS_ROLE }}
           role-session-name: tf-via-pr-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Authenticate GitHub
@@ -99,10 +97,8 @@ jobs:
         uses: ./
         with:
           working-directory: tests/aws/targets/${{ matrix.target }}
-          command: ${{ github.event_name == 'merge_group' && 'apply' || 'plan' }}
-          arg-lock: ${{ github.event_name == 'merge_group' }}
+          command: apply # ${{ github.event_name == 'merge_group' && 'apply' || 'plan' }}
           arg-lock-timeout: 3m
-          arg-refresh: false
 
           plan-encrypt: secrets.TF_ENCRYPTION
           # plan-parity: true

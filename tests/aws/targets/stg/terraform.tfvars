@@ -20,8 +20,4 @@ s3_bucket = {
     name_suffix    = "tyler"
     retention_days = 5
   }
-  turquoise = {
-    name_suffix    = "tyler"
-    retention_days = 5
-  }
 }

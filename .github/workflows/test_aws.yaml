@@ -61,12 +61,24 @@ jobs:
       group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name}}-${{ matrix.target }}
 
     steps:
-      - name: Authenticate AWS (ICE)
+      - name: Authenticate AWS
         uses: aws-actions/configure-aws-credentials@b47578312673ae6fa5b5096b330d9fbac3d116df # v4.2.1
         with:
           aws-region: us-west-1
           role-to-assume: arn:aws:iam::813676077823:role/terraform-oidc
           role-session-name: tf-via-pr-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Authenticate GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.number }}
+        run: |
+          # Authenticate with GitHub token.
+          git config --global url."https://token:${GH_TOKEN}@github.com".insteadOf "https://github.com"
+          # Add the target name as a PR label if it does not exist.
+          if [[ "${{ github.event_name }}" == "pull_request" && "${{ !contains(github.event.pull_request.labels.*.name, matrix.target) }}" == "true" ]]; then
+            gh api /repos/${{ github.repository }}/issues/${PR_NUMBER}/labels --method POST --field "labels[]=${{ matrix.target }}" --silent
+          fi
 
       - name: Setup Tofu
         uses: opentofu/setup-opentofu@592200bd4b9bbf4772ace78f887668b1aee8f716 # v1.0.5

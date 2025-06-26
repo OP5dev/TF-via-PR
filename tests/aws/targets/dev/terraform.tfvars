@@ -6,6 +6,15 @@ context = {
   aws_region     = "us-west-1"
 }
 
+ec2_instance = {
+  triangle = {
+    name_suffix    = "tom"
+    instance_type  = "t2.micro"
+    ubuntu_type    = "server"
+    ubuntu_version = "24.04"
+  }
+}
+
 s3_bucket = {
   orange = {
     name_suffix    = "olly"
@@ -14,14 +23,5 @@ s3_bucket = {
   yam = {
     name_suffix    = "ollie"
     retention_days = 3
-  }
-}
-
-ec2_instance = {
-  triangle = {
-    name_suffix    = "tom"
-    instance_type  = "t2.micro"
-    ubuntu_type    = "server"
-    ubuntu_version = "24.04"
   }
 }

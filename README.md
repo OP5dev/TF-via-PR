@@ -133,6 +133,16 @@ The following workflows showcase common use cases, while a comprehensive list of
 
 </br>
 
+### Are there online references?
+
+1. Medium - [Enhance Terraform/Tofu PR Automation with GitHub Action](https://medium.com/@rishavd/enhance-terraform-tofu-automation-with-github-action-1a775c8b6b61?source=friends_link&sk=645cb1f862d36fcc6f10e4fcffa44641)
+1. Medium - [Secure cloud provisioning pipeline with GitHub automation](https://storiesfromtheherd.com/secure-cloud-provisioning-pipeline-with-github-automation-1767b7ec0277?source=friends_link&sk=89f9975aaf838be87e2b0ac2d1e6d4e9)
+1. Terraform Weekly - [Issue #207](https://www.weekly.tf/p/issue-207-security-with-trivy-and-github-actions-tflint-aws-codebuild-and-self-hosted-gha-runners#opensource-projects)
+1. Awesome OpenTofu - [CI Tools](https://awesome-opentofu.com/#ci)
+1. LinkedIn - [GitOps with Terraform](https://www.linkedin.com/posts/chris3ware_gitops-terraform-activity-7259857653781217280-ozl2?utm_source=share&utm_medium=member_desktop&rcm=ACoAABUNaiIBf1vPir8Ef4ONnj2ohruezX5pFPo)
+
+</br>
+
 ### How does encryption work?
 
 Before the workflow uploads the plan file as an artifact, it can be encrypted-at-rest with a passphrase using `plan-encrypt` input to prevent exposure of sensitive data (e.g., `${{ secrets.PASSPHRASE }}`). This is done with [OpenSSL](https://docs.openssl.org/master/man1/openssl-enc/ "OpenSSL encryption documentation.")'s symmetric stream counter mode ([256 bit AES in CTR](https://docs.openssl.org/3.3/man1/openssl-enc/#supported-ciphers:~:text=192/256%20bit-,AES%20in%20CTR%20mode,-aes%2D%5B128%7C192)) encryption with salt and pbkdf2.

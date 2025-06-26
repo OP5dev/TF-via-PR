@@ -3,7 +3,7 @@ name: Test CI
 
 on:
   pull_request:
-    paths: [action.yml, tests/**, .github/workflows/test_ci.yaml]
+    paths: [action.yml, tests/fail*/**, tests/pass*/**, .github/workflows/test_ci.yaml]
     types: [opened, reopened, synchronize, closed]
 
 jobs:
@@ -42,7 +42,7 @@ jobs:
 
       - name: Setup Tofu
         if: matrix.tool == 'tofu'
-        uses: opentofu/setup-opentofu@12f4debbf681675350b6cd1f0ff8ecfbda62027b # v1.0.4
+        uses: opentofu/setup-opentofu@592200bd4b9bbf4772ace78f887668b1aee8f716 # v1.0.5
         with:
           tofu_version: latest
           tofu_wrapper: false
@@ -68,7 +68,7 @@ jobs:
           format: true
           validate: true
 
-          plan-encrypt: ${{ secrets.TF_ENCRYPTION }}
+          plan-encrypt: secrets.TF_ENCRYPTION
           plan-parity: true
           preserve-plan: true
           retention-days: 1

@@ -16,12 +16,8 @@ ec2_instance = {
 }
 
 s3_bucket = {
-  orange = {
-    name_suffix    = "olly"
-    retention_days = 3
-  }
-  yam = {
-    name_suffix    = "ollie"
+  purple = {
+    name_suffix    = "badger"
     retention_days = 3
   }
 }

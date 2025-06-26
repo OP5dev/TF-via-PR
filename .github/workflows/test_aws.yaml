@@ -97,9 +97,7 @@ jobs:
         uses: ./
         with:
           working-directory: tests/aws/targets/${{ matrix.target }}
-          command: apply # ${{ github.event_name == 'merge_group' && 'apply' || 'plan' }}
-          arg-auto-approve: true
-          arg-destroy: true
+          command: ${{ github.event_name == 'merge_group' && 'apply' || 'plan' }}
           arg-lock-timeout: 3m
 
           plan-encrypt: secrets.TF_ENCRYPTION

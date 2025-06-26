@@ -20,4 +20,8 @@ s3_bucket = {
     name_suffix    = "tyler"
     retention_days = 5
   }
+  joan = {
+    name_suffix    = "jonny"
+    retention_days = 5
+  }
 }

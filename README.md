@@ -137,6 +137,7 @@ The following workflows showcase common use cases, while a comprehensive list of
 
 1. Medium - [Enhance Terraform/Tofu PR Automation with GitHub Action](https://medium.com/@rishavd/enhance-terraform-tofu-automation-with-github-action-1a775c8b6b61?source=friends_link&sk=645cb1f862d36fcc6f10e4fcffa44641)
 1. Medium - [Secure cloud provisioning pipeline with GitHub automation](https://storiesfromtheherd.com/secure-cloud-provisioning-pipeline-with-github-automation-1767b7ec0277?source=friends_link&sk=89f9975aaf838be87e2b0ac2d1e6d4e9)
+1. Medium - [The Case for Terraform/Tofu Merge Queue](https://medium.com/@rishavd/the-case-for-terraform-tofu-merge-queue-d2f31392eade?source=friends_link&sk=49aedc27a45c772fc3c9a41a7abff1f4)
 1. Terraform Weekly - [Issue #207](https://www.weekly.tf/p/issue-207-security-with-trivy-and-github-actions-tflint-aws-codebuild-and-self-hosted-gha-runners#opensource-projects)
 1. Awesome OpenTofu - [CI Tools](https://awesome-opentofu.com/#ci)
 1. LinkedIn - [GitOps with Terraform](https://www.linkedin.com/posts/chris3ware_gitops-terraform-activity-7259857653781217280-ozl2?utm_source=share&utm_medium=member_desktop&rcm=ACoAABUNaiIBf1vPir8Ef4ONnj2ohruezX5pFPo)

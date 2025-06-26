@@ -49,6 +49,7 @@ jobs:
       checks: write # Required to add status summary.
       contents: read # Required to checkout repository.
       id-token: write # Required to authenticate via OIDC.
+      issues: write # Required to add PR label.
       pull-requests: write # Required to add PR comment.
 
     strategy:
@@ -59,6 +60,8 @@ jobs:
     concurrency:
       cancel-in-progress: false
       group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name}}-${{ matrix.target }}
+
+    environment: ${{ matrix.target }}
 
     steps:
       - name: Authenticate AWS

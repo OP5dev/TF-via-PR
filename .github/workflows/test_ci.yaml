@@ -22,7 +22,7 @@ jobs:
       matrix:
         tool:
           - tofu
-          # - terraform
+          - terraform
         test:
           - pass_one
           - pass_character_limit
@@ -68,7 +68,7 @@ jobs:
 
           format: true
           validate: true
-          pr-number: 479
+
           plan-encrypt: secrets.TF_ENCRYPTION
           plan-parity: true
           preserve-plan: true

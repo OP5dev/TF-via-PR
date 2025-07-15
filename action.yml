@@ -72,11 +72,16 @@ runs:
         echo arg-workspace=$([[ -n "$TF_WORKSPACE" ]] && echo " -workspace=$TF_WORKSPACE" || echo "") >> "$GITHUB_OUTPUT"
 
     - id: identifier
+      env:
+        INPUT_PR_NUMBER: ${{ inputs.pr-number }}
       shell: bash
       run: |
         # Unique identifier.
         # Get PR number using GitHub API for different event triggers.
-        if [[ "$GITHUB_EVENT_NAME" == "push" || "$GITHUB_EVENT_NAME" == "repository_dispatch" || "$GITHUB_EVENT_NAME" == "workflow_call" || "$GITHUB_EVENT_NAME" == "workflow_dispatch" || "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
+        if [[ "$INPUT_PR_NUMBER" != "" ]]; then
+          # Use provided PR number if specified.
+          pr_number="$INPUT_PR_NUMBER"
+        elif [[ "$GITHUB_EVENT_NAME" == "push" || "$GITHUB_EVENT_NAME" == "repository_dispatch" || "$GITHUB_EVENT_NAME" == "workflow_call" || "$GITHUB_EVENT_NAME" == "workflow_dispatch" || "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
           # List PRs associated with the commit, then get the PR number from the head ref or the latest PR.
           associated_prs=$(gh api /repos/${{ github.repository }}/commits/${{ github.event.pull_request.head.sha || github.sha }}/pulls --header "$GH_API" --method GET --paginate)
           pr_number=$(echo "$associated_prs" | jq --raw-output '(.[] | select(.head.ref == env.GITHUB_REF_NAME) | .number) // .[0].number // 0')
@@ -521,6 +526,10 @@ inputs:
   plan-parity:
     default: "false"
     description: "Replace the plan file if it matches a newly-generated one to prevent stale apply (e.g., `false`)."
+    required: false
+  pr-number:
+    default: ""
+    description: "Specify PR number in case of unsupported workflow trigger (e.g., `123`)."
     required: false
   preserve-plan:
     default: "false"

@@ -78,14 +78,14 @@ runs:
         # Get PR number using GitHub API for different event triggers.
         if [[ "$GITHUB_EVENT_NAME" == "push" || "$GITHUB_EVENT_NAME" == "repository_dispatch" || "$GITHUB_EVENT_NAME" == "workflow_call" || "$GITHUB_EVENT_NAME" == "workflow_dispatch" || "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
           # List PRs associated with the commit, then get the PR number from the head ref or the latest PR.
-          associated_prs=$(gh api /repos/${{ github.repository }}/commits/${{ github.event.pull_request.head.sha || github.sha }}/pulls --header "$GH_API" --method GET --field per_page=100)
+          associated_prs=$(gh api /repos/${{ github.repository }}/commits/${{ github.event.pull_request.head.sha || github.sha }}/pulls --header "$GH_API" --method GET --paginate)
           pr_number=$(echo "$associated_prs" | jq --raw-output '(.[] | select(.head.ref == env.GITHUB_REF_NAME) | .number) // .[0].number // 0')
         elif [[ "$GITHUB_EVENT_NAME" == "merge_group" ]]; then
           # Get the PR number by parsing the ref name.
           pr_number=$(echo "${{ github.ref_name }}" | sed -n 's/.*pr-\([0-9]*\)-.*/\1/p')
         else
           # Get the PR number from branch name, otherwise fallback on 0 if the PR number is not found.
-          pr_number=${{ github.event.number || github.event.issue.number }} || $(gh api /repos/${{ github.repository }}/pulls --header "$GH_API" --method GET --field per_page=100 --field head="${{ github.ref_name || github.head_ref || github.ref || '0' }}" | jq '.[0].number // 0')
+          pr_number=${{ github.event.number || github.event.issue.number }} || $(gh api /repos/${{ github.repository }}/pulls --header "$GH_API" --method GET --paginate --field head="${{ github.ref_name || github.head_ref || github.ref || '0' }}" | jq '.[0].number // 0')
         fi
         echo "pr=$pr_number" >> "$GITHUB_OUTPUT"
 
@@ -402,7 +402,7 @@ runs:
         # Post PR comment if configured and PR exists.
         if [[ "$create_comment" == "true" && "${{ steps.identifier.outputs.pr }}" != "0" ]]; then
           # Check if the PR contains a bot comment with the same identifier.
-          list_comments=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method GET --field per_page=100)
+          list_comments=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method GET --paginate)
           bot_comment=$(echo "$list_comments" | jq --raw-output --arg identifier "${{ steps.identifier.outputs.name }}" '.[] | select(.user.type == "Bot") | select(.body | contains($identifier)) | .id' | tail -n 1)
 
           if [[ -n "$bot_comment" ]]; then
@@ -423,7 +423,7 @@ runs:
           fi
         elif [[ "${{ inputs.comment-pr }}" == "on-change" && "${{ steps.identifier.outputs.pr }}" != "0" ]]; then
           # Delete previous comment due to no changes.
-          list_comments=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method GET --field per_page=100)
+          list_comments=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method GET --paginate)
           bot_comment=$(echo "$list_comments" | jq --raw-output --arg identifier "${{ steps.identifier.outputs.name }}" '.[] | select(.user.type == "Bot") | select(.body | contains($identifier)) | .id' | tail -n 1)
 
           if [[ -n "$bot_comment" ]]; then

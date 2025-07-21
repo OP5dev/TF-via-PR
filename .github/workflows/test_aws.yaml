@@ -101,7 +101,7 @@ jobs:
           arg-lock-timeout: 3m
 
           plan-encrypt: secrets.TF_ENCRYPTION
-          # plan-parity: true
+          plan-parity: true
           retention-days: 1
 
           expand-diff: true

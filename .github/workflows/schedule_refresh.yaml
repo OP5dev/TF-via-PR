@@ -38,7 +38,7 @@ jobs:
       - name: Open issue on drift
         if: steps.provision.outputs.exitcode != 0
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           diff: ${{ steps.provision.outputs.diff }}
           run: ${{ steps.provision.outputs.run-url }}
           result: ${{ steps.provision.outputs.result }}

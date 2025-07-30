@@ -2,6 +2,7 @@
 name: Test scheduled workflow
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: "*/5 * * * *" # Every 5 minutes.
 

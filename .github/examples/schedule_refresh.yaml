@@ -33,6 +33,7 @@ jobs:
           command: plan
           arg-lock: false
           arg-refresh-only: true
+          comment-pr: false
           plan-encrypt: ${{ secrets.PASSPHRASE }}
 
       - name: Open issue on drift

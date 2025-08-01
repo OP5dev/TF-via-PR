@@ -9,7 +9,7 @@ on:
 
 jobs:
   ci:
-    name: This here is a very long job name that exceeds a certain character count which exceeds GitHub API limits
+    name: This here is a very long job name that reaches a certain character count which exceeds GitHub API limits
     runs-on: ubuntu-24.04
 
     permissions:

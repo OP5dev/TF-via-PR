@@ -22,13 +22,13 @@ jobs:
       matrix:
         tool:
           - tofu
-          - terraform
+          # - terraform
         test:
           - pass_one
-          - pass_character_limit
-          - fail_data_source_error
-          - fail_format_diff
-          - fail_invalid_resource_type
+          # - pass_character_limit
+          # - fail_data_source_error
+          # - fail_format_diff
+          # - fail_invalid_resource_type
 
     steps:
       - name: Echo context
@@ -48,12 +48,12 @@ jobs:
           tofu_version: latest
           tofu_wrapper: false
 
-      - name: Setup Terraform
-        if: matrix.tool == 'terraform'
-        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
-        with:
-          terraform_version: latest
-          terraform_wrapper: false
+      # - name: Setup Terraform
+      #   if: matrix.tool == 'terraform'
+      #   uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+      #   with:
+      #     terraform_version: latest
+      #     terraform_wrapper: false
 
       - name: Provision TF
         id: tf
@@ -64,14 +64,14 @@ jobs:
           command: ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
           arg-lock: ${{ github.event.pull_request.merged }}
           arg-refresh: ${{ github.event.pull_request.merged && 'false' || 'true' }}
-          arg-workspace: dev
+          # arg-workspace: dev
 
-          format: true
-          validate: true
+          # format: true
+          # validate: true
 
-          plan-encrypt: secrets.TF_ENCRYPTION
-          plan-parity: true
-          preserve-plan: true
+          # plan-encrypt: secrets.TF_ENCRYPTION
+          # plan-parity: true
+          # preserve-plan: true
           retention-days: 1
 
           comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}

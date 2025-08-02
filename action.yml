@@ -317,7 +317,7 @@ runs:
           # For dynamic matrix jobs, retry with exponential backoff until the job ID is found or a timeout occurs.
           retry_interval=1
           while [[ -z "$job_id" ]]; do
-            if [[ $retry_interval -gt 32 ]]; then
+            if [[ $retry_interval -gt 64 ]]; then
               echo "Unable to locate job ID for matrix: $matrix."
               exit 1
             fi

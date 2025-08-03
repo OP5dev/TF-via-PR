@@ -92,7 +92,7 @@ runs:
           # Get the PR number from branch name, otherwise fallback on 0 if the PR number is not found.
           pr_number=${{ github.event.number || github.event.issue.number }} || $(gh api /repos/${{ github.repository }}/pulls --header "$GH_API" --method GET --paginate --field head="${{ github.ref_name || github.head_ref || github.ref || '0' }}" | jq '.[0].number // 0')
         fi
-        echo "pr=$pr_number" >> "$GITHUB_OUTPUT"
+        echo "pr=${pr_number:-0}" >> "$GITHUB_OUTPUT"
 
         # Generate identifier for the workflow run using MD5 hashing algorithm for concise and unique naming.
         identifier="${{ steps.arg.outputs.arg-chdir }}${{ steps.arg.outputs.arg-workspace }}${{ steps.arg.outputs.arg-backend-config }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }}${{ steps.arg.outputs.arg-destroy }}"

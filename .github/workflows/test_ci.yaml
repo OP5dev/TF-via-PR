@@ -35,10 +35,12 @@ jobs:
       - name: Echo context
         env:
           GH_JSON: ${{ toJson(github) }}
-          JOB_JSON: ${{ toJson(job) }}
+          JOB_ID: ${{ job.check_run_id }}
+          JOB_RUN: ${{ job.check_run }}
         run: |
           echo "$GH_JSON"
-          echo "$JOB_JSON"
+          echo "$JOB_ID"
+          echo "$JOB_RUN"
 
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2

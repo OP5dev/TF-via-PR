@@ -97,16 +97,14 @@ jobs:
         uses: ./
         with:
           working-directory: tests/aws/targets/${{ matrix.target }}
+          tool: tofu
           command: ${{ github.event_name == 'merge_group' && 'apply' || 'plan' }}
           arg-lock-timeout: 3m
-
           plan-encrypt: secrets.TF_ENCRYPTION
           plan-parity: true
           retention-days: 1
-
           expand-diff: true
           tag-actor: never
-          tool: tofu
 
       - name: Troubleshoot TF
         if: ${{ failure() && github.event_name == 'merge_group' }}
@@ -132,12 +130,11 @@ jobs:
         uses: ./
         with:
           working-directory: tests/aws/targets/${{ matrix.target }}
+          tool: tofu
           command: apply
           arg-auto-approve: true
           arg-lock-timeout: 3m
-
           comment-pr: false
-          tool: tofu
 
   Notify:
     runs-on: [ubuntu-24.04]

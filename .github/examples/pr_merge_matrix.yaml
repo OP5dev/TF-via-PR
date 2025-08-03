@@ -35,6 +35,7 @@ jobs:
         uses: op5dev/tf-via-pr@v13
         with:
           working-directory: path/to/${{ matrix.deployment }}
+          tool: tofu
           command: ${{ github.event_name == 'merge_group' && 'apply' || 'plan' }}
           arg-refresh: ${{ github.event_name == 'merge_group' && 'false' || 'true' }} # Skip refresh on apply.
           arg-lock: ${{ github.event_name == 'merge_group' }}
@@ -42,4 +43,3 @@ jobs:
           arg-workspace: ${{ matrix.deployment }}
           plan-encrypt: ${{ secrets.PASSPHRASE }}
           plan-parity: true # Prevents stale apply within merge queue.
-          tool: tofu

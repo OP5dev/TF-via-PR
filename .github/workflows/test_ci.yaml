@@ -18,18 +18,18 @@ jobs:
       contents: read # Required to checkout repository.
       pull-requests: write # Required to add PR comment.
 
-    # strategy:
-    #   fail-fast: false
-    #   matrix:
-    #     tool:
-    #       - tofu
-    #       # - terraform
-    #     test:
-    #       - pass_one
-    #       # - pass_character_limit
-    #       # - fail_data_source_error
-    #       # - fail_format_diff
-    #       # - fail_invalid_resource_type
+    strategy:
+      fail-fast: false
+      matrix:
+        tool:
+          - tofu
+          - terraform
+        test:
+          - pass_one
+          - pass_character_limit
+          - fail_data_source_error
+          - fail_format_diff
+          - fail_invalid_resource_type
 
     steps:
       - name: Echo context
@@ -43,58 +43,58 @@ jobs:
           persist-credentials: false
 
       - name: Setup Tofu
-        # if: matrix.tool == 'tofu'
+        if: matrix.tool == 'tofu'
         uses: opentofu/setup-opentofu@592200bd4b9bbf4772ace78f887668b1aee8f716 # v1.0.5
         with:
           tofu_version: latest
           tofu_wrapper: false
 
-      # - name: Setup Terraform
-      #   if: matrix.tool == 'terraform'
-      #   uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
-      #   with:
-      #     terraform_version: latest
-      #     terraform_wrapper: false
+      - name: Setup Terraform
+        if: matrix.tool == 'terraform'
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_version: latest
+          terraform_wrapper: false
 
       - name: Provision TF
         id: tf
         continue-on-error: true
         uses: ./
         with:
-          working-directory: tests/pass_one # tests/${{ matrix.test }}
-          tool: tofu # ${{ matrix.tool }}
+          working-directory: tests/${{ matrix.test }}
+          tool: ${{ matrix.tool }}
           command: ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
           arg-lock: ${{ github.event.pull_request.merged }}
           arg-refresh: ${{ github.event.pull_request.merged && 'false' || 'true' }}
-          # arg-workspace: dev
+          arg-workspace: dev
 
-          # format: true
-          # validate: true
+          format: true
+          validate: true
 
-          # plan-encrypt: secrets.TF_ENCRYPTION
-          # plan-parity: true
-          # preserve-plan: true
+          plan-encrypt: secrets.TF_ENCRYPTION
+          plan-parity: true
+          preserve-plan: true
           retention-days: 1
 
-          # comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
-          # expand-diff: true
-          # hide-args: detailed-exitcode,lock,out,refresh
-          # tag-actor: never
+          comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
+          expand-diff: true
+          hide-args: detailed-exitcode,lock,out,refresh
+          tag-actor: never
 
-      # - name: Echo TF
-      #   continue-on-error: true
-      #   run: |
-      #     echo "check-id: ${{ steps.tf.outputs.check-id }}"
-      #     echo "command: ${{ steps.tf.outputs.command }}"
-      #     echo "comment-body:"
-      #     echo "comment-id: ${{ steps.tf.outputs.comment-id }}"
-      #     echo "diff: ${{ steps.tf.outputs.diff }}"
-      #     echo "exitcode: ${{ steps.tf.outputs.exitcode }}"
-      #     echo "identifier: ${{ steps.tf.outputs.identifier }}"
-      #     echo "job-id: ${{ steps.tf.outputs.job-id }}"
-      #     echo "plan-id: ${{ steps.tf.outputs.plan-id }}"
-      #     echo "plan-url: ${{ steps.tf.outputs.plan-url }}"
-      #     echo "result: ${{ steps.tf.outputs.result }}"
-      #     echo "run-url: ${{ steps.tf.outputs.run-url }}"
-      #     echo "summary: ${{ steps.tf.outputs.summary }}"
-      #     ${{ matrix.tool }} -chdir=tests/${{ matrix.test }} show -no-color tfplan
+      - name: Echo TF
+        continue-on-error: true
+        run: |
+          echo "check-id: ${{ steps.tf.outputs.check-id }}"
+          echo "command: ${{ steps.tf.outputs.command }}"
+          echo "comment-body:"
+          echo "comment-id: ${{ steps.tf.outputs.comment-id }}"
+          echo "diff: ${{ steps.tf.outputs.diff }}"
+          echo "exitcode: ${{ steps.tf.outputs.exitcode }}"
+          echo "identifier: ${{ steps.tf.outputs.identifier }}"
+          echo "job-id: ${{ steps.tf.outputs.job-id }}"
+          echo "plan-id: ${{ steps.tf.outputs.plan-id }}"
+          echo "plan-url: ${{ steps.tf.outputs.plan-url }}"
+          echo "result: ${{ steps.tf.outputs.result }}"
+          echo "run-url: ${{ steps.tf.outputs.run-url }}"
+          echo "summary: ${{ steps.tf.outputs.summary }}"
+          ${{ matrix.tool }} -chdir=tests/${{ matrix.test }} show -no-color tfplan

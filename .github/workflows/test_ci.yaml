@@ -9,7 +9,7 @@ on:
 
 jobs:
   pass_one_pass_two_pass_three_pass_four_pass_five_pass_six_pass_seven_pass_eight_pass_nine_pass_tens:
-    name: pass_one_pass_two_pass_three_pass_four_pass_five_pass_six_pass_seven_pass_eight_pass_nine_pass_tensys
+    name: pass_one_pass_two_pass_three_pass_four_pass_five_pass_six_pass_seven_pass_eight_pass_nine_pass_ten_pass
     runs-on: ubuntu-24.04
 
     permissions:

@@ -8,7 +8,7 @@ on:
     types: [opened, reopened, synchronize, closed]
 
 jobs:
-  ci:
+  pass_one_pass_two_pass_three_pass_four_pass_five_pass_six_pass_seven_pass_eight_pass_nine:
     runs-on: ubuntu-24.04
 
     permissions:
@@ -17,19 +17,18 @@ jobs:
       contents: read # Required to checkout repository.
       pull-requests: write # Required to add PR comment.
 
-    strategy:
-      fail-fast: false
-      matrix:
-        tool:
-          - tofu
-          # - terraform
-        test:
-          - pass_one_pass_two_pass_three_pass_four_pass_five_pass_six_pass_seven_pass_eight_pass_nines
-          # - pass_one
-          # - pass_character_limit
-          # - fail_data_source_error
-          # - fail_format_diff
-          # - fail_invalid_resource_type
+    # strategy:
+    #   fail-fast: false
+    #   matrix:
+    #     tool:
+    #       - tofu
+    #       # - terraform
+    #     test:
+    #       - pass_one
+    #       # - pass_character_limit
+    #       # - fail_data_source_error
+    #       # - fail_format_diff
+    #       # - fail_invalid_resource_type
 
     steps:
       - name: Echo context
@@ -43,7 +42,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Tofu
-        if: matrix.tool == 'tofu'
+        # if: matrix.tool == 'tofu'
         uses: opentofu/setup-opentofu@592200bd4b9bbf4772ace78f887668b1aee8f716 # v1.0.5
         with:
           tofu_version: latest
@@ -61,8 +60,8 @@ jobs:
         continue-on-error: true
         uses: ./
         with:
-          working-directory: tests/${{ matrix.test }}
-          tool: ${{ matrix.tool }}
+          working-directory: tests/pass_one # tests/${{ matrix.test }}
+          tool: tofu # ${{ matrix.tool }}
           command: ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
           arg-lock: ${{ github.event.pull_request.merged }}
           arg-refresh: ${{ github.event.pull_request.merged && 'false' || 'true' }}

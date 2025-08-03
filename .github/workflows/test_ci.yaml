@@ -35,7 +35,10 @@ jobs:
       - name: Echo context
         env:
           GH_JSON: ${{ toJson(github) }}
-        run: echo "$GH_JSON"
+          JOB_JSON: ${{ toJson(job) }}
+        run: |
+          echo "$GH_JSON"
+          echo "$JOB_JSON"
 
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -62,6 +65,7 @@ jobs:
         uses: ./
         with:
           working-directory: tests/${{ matrix.test }}
+          tool: ${{ matrix.tool }}
           command: ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
           arg-lock: ${{ github.event.pull_request.merged }}
           arg-refresh: ${{ github.event.pull_request.merged && 'false' || 'true' }}
@@ -75,26 +79,25 @@ jobs:
           # preserve-plan: true
           retention-days: 1
 
-          comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
-          expand-diff: true
-          hide-args: detailed-exitcode,lock,out,refresh
-          tag-actor: never
-          tool: ${{ matrix.tool }}
+          # comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
+          # expand-diff: true
+          # hide-args: detailed-exitcode,lock,out,refresh
+          # tag-actor: never
 
-      - name: Echo TF
-        continue-on-error: true
-        run: |
-          echo "check-id: ${{ steps.tf.outputs.check-id }}"
-          echo "command: ${{ steps.tf.outputs.command }}"
-          echo "comment-body:"
-          echo "comment-id: ${{ steps.tf.outputs.comment-id }}"
-          echo "diff: ${{ steps.tf.outputs.diff }}"
-          echo "exitcode: ${{ steps.tf.outputs.exitcode }}"
-          echo "identifier: ${{ steps.tf.outputs.identifier }}"
-          echo "job-id: ${{ steps.tf.outputs.job-id }}"
-          echo "plan-id: ${{ steps.tf.outputs.plan-id }}"
-          echo "plan-url: ${{ steps.tf.outputs.plan-url }}"
-          echo "result: ${{ steps.tf.outputs.result }}"
-          echo "run-url: ${{ steps.tf.outputs.run-url }}"
-          echo "summary: ${{ steps.tf.outputs.summary }}"
-          ${{ matrix.tool }} -chdir=tests/${{ matrix.test }} show -no-color tfplan
+      # - name: Echo TF
+      #   continue-on-error: true
+      #   run: |
+      #     echo "check-id: ${{ steps.tf.outputs.check-id }}"
+      #     echo "command: ${{ steps.tf.outputs.command }}"
+      #     echo "comment-body:"
+      #     echo "comment-id: ${{ steps.tf.outputs.comment-id }}"
+      #     echo "diff: ${{ steps.tf.outputs.diff }}"
+      #     echo "exitcode: ${{ steps.tf.outputs.exitcode }}"
+      #     echo "identifier: ${{ steps.tf.outputs.identifier }}"
+      #     echo "job-id: ${{ steps.tf.outputs.job-id }}"
+      #     echo "plan-id: ${{ steps.tf.outputs.plan-id }}"
+      #     echo "plan-url: ${{ steps.tf.outputs.plan-url }}"
+      #     echo "result: ${{ steps.tf.outputs.result }}"
+      #     echo "run-url: ${{ steps.tf.outputs.run-url }}"
+      #     echo "summary: ${{ steps.tf.outputs.summary }}"
+      #     ${{ matrix.tool }} -chdir=tests/${{ matrix.test }} show -no-color tfplan

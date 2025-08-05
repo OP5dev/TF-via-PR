@@ -31,8 +31,6 @@ jobs:
         with:
           working-directory: tests/pass_one
           command: plan
-          arg-lock: false
-          arg-refresh-only: true
           comment-pr: false
 
       - name: Open issue on drift

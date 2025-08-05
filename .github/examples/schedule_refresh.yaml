@@ -14,7 +14,6 @@ jobs:
       checks: write        # Required to add status summary.
       contents: read       # Required to checkout repository.
       issues: write        # Required to open issue.
-      pull-requests: write # Required to add PR comment.
 
     steps:
       - name: Checkout repository
@@ -32,7 +31,6 @@ jobs:
           working-directory: path/to/directory
           command: plan
           arg-lock: false
-          arg-refresh-only: true
           comment-pr: false
           plan-encrypt: ${{ secrets.PASSPHRASE }}
 

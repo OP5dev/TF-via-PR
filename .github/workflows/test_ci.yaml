@@ -76,7 +76,6 @@ jobs:
           retention-days: 1
 
           comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
-          expand-diff: true
           hide-args: detailed-exitcode,lock,out,refresh
           tag-actor: never
 

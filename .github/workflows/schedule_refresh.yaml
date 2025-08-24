@@ -29,7 +29,7 @@ jobs:
         id: provision
         uses: op5dev/tf-via-pr@v13
         with:
-          working-directory: path/to/directory
+          working-directory: tests/pass_one
           command: plan
           arg-lock: false
           comment-pr: false

@@ -2,6 +2,7 @@
 name: Trigger on schedule (cron) event with -refresh-only to open an issue on configuration drift.
 
 on:
+  pull_request:
   schedule:
     - cron: "0 */8 * * 1-5" # Every 8 hours on weekdays.
 

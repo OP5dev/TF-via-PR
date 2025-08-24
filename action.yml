@@ -371,8 +371,8 @@ runs:
           if [[ "${{ inputs.comment-pr }}" == "on-change" ]]; then create_comment="true"; fi
           if [[ "${{ inputs.tag-actor }}" == "on-change" ]]; then tag_actor="true"; fi
         fi
-        if [[ "${{ inputs.comment-pr }}" == "always" ]]; then create_comment="true"; fi
-        if [[ "${{ inputs.tag-actor }}" == "always" ]]; then tag_actor="true"; fi
+        if [[ "${{ inputs.comment-pr }}" == "always" || "${{ inputs.comment-pr }}" == "true" ]]; then create_comment="true"; fi
+        if [[ "${{ inputs.tag-actor }}" == "always" || "${{ inputs.tag-actor }}" == "true" ]]; then tag_actor="true"; fi
         if [[ "$tag_actor" == "true" ]]; then handle="@"; else handle=""; fi
 
         # Collate body content.

@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Setup TF
         uses: hashicorp/setup-terraform@v3
@@ -32,31 +34,31 @@ jobs:
           working-directory: tests/pass_one
           command: plan
           arg-lock: false
-          comment-pr: false
+          comment-pr: on-change
           plan-encrypt: ${{ secrets.PASSPHRASE }}
 
-      - name: Open issue on drift
-        if: steps.provision.outputs.exitcode != 0
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          diff: ${{ steps.provision.outputs.diff }}
-          run: ${{ steps.provision.outputs.run-url }}
-          result: ${{ steps.provision.outputs.result }}
-          summary: ${{ steps.provision.outputs.summary }}
-        run: |
-          gh api /repos/{owner}/{repo}/issues \
-            --method POST \
-            --field title="Configuration drift detected" \
-            --field body="[View log.]($run)
-          <details><summary>Diff of changes.</summary>
+      # - name: Open issue on drift
+      #   if: steps.provision.outputs.exitcode != 0
+      #   env:
+      #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     diff: ${{ steps.provision.outputs.diff }}
+      #     run: ${{ steps.provision.outputs.run-url }}
+      #     result: ${{ steps.provision.outputs.result }}
+      #     summary: ${{ steps.provision.outputs.summary }}
+      #   run: |
+      #     gh api /repos/{owner}/{repo}/issues \
+      #       --method POST \
+      #       --field title="Configuration drift detected" \
+      #       --field body="[View log.]($run)
+      #     <details><summary>Diff of changes.</summary>
 
-          \`\`\`diff
-          $diff
-          \`\`\`
-          </details>
-          <details><summary>$summary</summary>
+      #     \`\`\`diff
+      #     $diff
+      #     \`\`\`
+      #     </details>
+      #     <details><summary>$summary</summary>
 
-          \`\`\`hcl
-          $result
-          \`\`\`
-          </details>"
+      #     \`\`\`hcl
+      #     $result
+      #     \`\`\`
+      #     </details>"

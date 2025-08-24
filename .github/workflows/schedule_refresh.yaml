@@ -35,6 +35,7 @@ jobs:
           working-directory: tests/pass_one
           command: plan
           arg-lock: false
+          arg-refresh: false
           comment-pr: on-change
           plan-encrypt: ${{ secrets.PASSPHRASE }}
 

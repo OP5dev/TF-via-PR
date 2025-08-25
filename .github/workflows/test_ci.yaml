@@ -47,21 +47,11 @@ jobs:
         uses: ./
         with:
           working-directory: ${{ matrix.test }}
-          command: ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
-          arg-lock: ${{ github.event.pull_request.merged }}
-          arg-refresh: ${{ github.event.pull_request.merged && 'false' || 'true' }}
-          arg-workspace: dev
-
-          format: true
-          validate: true
-
-          plan-encrypt: secrets.TF_ENCRYPTION
-          plan-parity: true
-          preserve-plan: true
-          retention-days: 1
-
-          hide-args: detailed-exitcode,lock,out,refresh
-          tag-actor: never
+          arg-recursive: false
+          arg-lock: false
+          arg-get: true
+          command: plan
+          upload-plan: false
 
       - name: Echo TF
         continue-on-error: true

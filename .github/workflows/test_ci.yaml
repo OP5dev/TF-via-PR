@@ -10,7 +10,7 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-24.04
-    name: Run Tofu actions
+    name: Run Terraform actions
 
     permissions:
       actions: read # Required to identify workflow run.
@@ -21,9 +21,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        tool:
-          - tofu
-          # - terraform
+        # tool:
+        #   - tofu
+        #   - terraform
         test:
           - pass_one
           - pass_zero
@@ -43,15 +43,13 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup Tofu
-        if: matrix.tool == 'tofu'
-        uses: opentofu/setup-opentofu@592200bd4b9bbf4772ace78f887668b1aee8f716 # v1.0.5
-        with:
-          tofu_version: latest
-          tofu_wrapper: false
+      # - name: Setup Tofu
+      #   uses: opentofu/setup-opentofu@592200bd4b9bbf4772ace78f887668b1aee8f716 # v1.0.5
+      #   with:
+      #     tofu_version: latest
+      #     tofu_wrapper: false
 
       - name: Setup Terraform
-        if: matrix.tool == 'terraform'
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
         with:
           terraform_version: latest
@@ -63,7 +61,6 @@ jobs:
         uses: ./
         with:
           working-directory: tests/${{ matrix.test }}
-          tool: ${{ matrix.tool }}
           command: ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
           arg-lock: ${{ github.event.pull_request.merged }}
           arg-refresh: ${{ github.event.pull_request.merged && 'false' || 'true' }}
@@ -77,7 +74,6 @@ jobs:
           preserve-plan: true
           retention-days: 1
 
-          comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
           hide-args: detailed-exitcode,lock,out,refresh
           tag-actor: never
 
@@ -97,4 +93,3 @@ jobs:
           echo "result: ${{ steps.tf.outputs.result }}"
           echo "run-url: ${{ steps.tf.outputs.run-url }}"
           echo "summary: ${{ steps.tf.outputs.summary }}"
-          ${{ matrix.tool }} -chdir=tests/${{ matrix.test }} show -no-color tfplan

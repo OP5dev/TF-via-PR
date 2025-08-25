@@ -134,7 +134,7 @@ jobs:
           command: apply
           arg-auto-approve: true
           arg-lock-timeout: 3m
-          comment-pr: false
+          comment-pr: never
 
   Notify:
     runs-on: [ubuntu-24.04]

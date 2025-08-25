@@ -31,7 +31,6 @@ jobs:
           working-directory: path/to/directory
           command: plan
           arg-lock: false
-          arg-refresh: false
           comment-pr: never
           plan-encrypt: ${{ secrets.PASSPHRASE }}
 

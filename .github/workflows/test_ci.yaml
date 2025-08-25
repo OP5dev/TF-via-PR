@@ -8,23 +8,8 @@ on:
     types: [opened, reopened, synchronize, closed]
 
 jobs:
-  inputs:
-    runs-on: ubuntu-latest
-    name: Collect workflow inputs
-
-    permissions: {}
-
-    outputs:
-      directory: ${{ steps.directory.outputs.paths }}
-
-    steps:
-      - id: directory
-        run: echo paths='["lab/eu-west-1/123456789/004_vpc","lab/eu-west-1/123456789/006_eks","lab/eu-west-1/123456789/007_eks_addons","lab/eu-west-1/123456789/008_app_roles"]' >> "$GITHUB_OUTPUT"
-
   ci:
-    runs-on: ubuntu-latest
-    name: Run Terraform actions
-    needs: inputs
+    runs-on: ubuntu-24.04
 
     permissions:
       actions: read # Required to identify workflow run.
@@ -35,11 +20,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        directory: ${{ fromJson(needs.inputs.outputs.directory) }}
-          # - lab/eu-west-1/123456789/004_vpc
-          # - lab/eu-west-1/123456789/006_eks
-          # - lab/eu-west-1/123456789/007_eks_addons
-          # - lab/eu-west-1/123456789/008_app_roles
+        tool:
+          - tofu
+          - terraform
+        test:
+          - pass_one
+          - pass_character_limit
+          - fail_data_source_error
+          - fail_format_diff
+          - fail_invalid_resource_type
 
     steps:
       - name: Echo context
@@ -52,7 +41,15 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Setup Tofu
+        if: matrix.tool == 'tofu'
+        uses: opentofu/setup-opentofu@592200bd4b9bbf4772ace78f887668b1aee8f716 # v1.0.5
+        with:
+          tofu_version: latest
+          tofu_wrapper: false
+
       - name: Setup Terraform
+        if: matrix.tool == 'terraform'
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
         with:
           terraform_version: latest
@@ -60,14 +57,27 @@ jobs:
 
       - name: Provision TF
         id: tf
+        continue-on-error: true
         uses: ./
         with:
-          working-directory: ${{ matrix.directory }}
-          arg-recursive: false
-          arg-lock: false
-          arg-get: true
-          command: plan
-          upload-plan: false
+          working-directory: tests/${{ matrix.test }}
+          tool: ${{ matrix.tool }}
+          command: ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
+          arg-lock: ${{ github.event.pull_request.merged }}
+          arg-refresh: ${{ github.event.pull_request.merged && 'false' || 'true' }}
+          arg-workspace: dev
+
+          format: true
+          validate: true
+
+          plan-encrypt: secrets.TF_ENCRYPTION
+          plan-parity: true
+          preserve-plan: true
+          retention-days: 1
+
+          comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
+          hide-args: detailed-exitcode,lock,out,refresh
+          tag-actor: never
 
       - name: Echo TF
         continue-on-error: true
@@ -85,3 +95,4 @@ jobs:
           echo "result: ${{ steps.tf.outputs.result }}"
           echo "run-url: ${{ steps.tf.outputs.run-url }}"
           echo "summary: ${{ steps.tf.outputs.summary }}"
+          ${{ matrix.tool }} -chdir=tests/${{ matrix.test }} show -no-color tfplan

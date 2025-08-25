@@ -25,7 +25,7 @@ jobs:
           # - terraform
         test:
           - pass_one
-          - pass_one
+          - pass_zero
           # - pass_character_limit
           # - fail_data_source_error
           # - fail_format_diff

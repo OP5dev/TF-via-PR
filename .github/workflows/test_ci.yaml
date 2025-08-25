@@ -9,7 +9,7 @@ on:
 
 jobs:
   ci:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     name: Run Terraform actions
 
     permissions:
@@ -21,16 +21,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # tool:
-        #   - tofu
-        #   - terraform
         test:
           - tests/pass_one
           - tests/pass_zero
-          # - pass_character_limit
-          # - fail_data_source_error
-          # - fail_format_diff
-          # - fail_invalid_resource_type
 
     steps:
       - name: Echo context
@@ -42,12 +35,6 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
-
-      # - name: Setup Tofu
-      #   uses: opentofu/setup-opentofu@592200bd4b9bbf4772ace78f887668b1aee8f716 # v1.0.5
-      #   with:
-      #     tofu_version: latest
-      #     tofu_wrapper: false
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2

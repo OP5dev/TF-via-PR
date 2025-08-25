@@ -114,14 +114,15 @@ runs:
 
     - id: identifier
       env:
-        INPUT_PR_NUMBER: ${{ inputs.pr-number }}
+        INPUTS_PR_NUMBER: ${{ inputs.pr-number }}
+        INPUTS_TOOL: ${{ inputs.tool }}
       shell: bash
       run: |
         # Unique identifier.
         # Get PR number using GitHub API for different event triggers.
-        if [[ "$INPUT_PR_NUMBER" != "" ]]; then
+        if [[ "$INPUTS_PR_NUMBER" != "" ]]; then
           # Use provided PR number if specified.
-          pr_number="$INPUT_PR_NUMBER"
+          pr_number="$INPUTS_PR_NUMBER"
         elif [[ "$GITHUB_EVENT_NAME" == "push" || "$GITHUB_EVENT_NAME" == "repository_dispatch" || "$GITHUB_EVENT_NAME" == "workflow_call" || "$GITHUB_EVENT_NAME" == "workflow_dispatch" || "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
           # List PRs associated with the commit, then get the PR number from the head ref or the latest PR.
           associated_prs=$(gh api /repos/${{ github.repository }}/commits/${{ github.event.pull_request.head.sha || github.sha }}/pulls --header "$GH_API" --method GET --paginate)
@@ -138,7 +139,7 @@ runs:
         # Generate identifier for the workflow run using MD5 hashing algorithm for concise and unique naming.
         identifier="${{ steps.arg.outputs.arg-chdir }}${{ steps.arg.outputs.arg-workspace }}${{ steps.arg.outputs.arg-backend-config }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }}${{ steps.arg.outputs.arg-destroy }}"
         identifier=$(echo -n "$identifier" | md5sum | awk '{print $1}')
-        echo "name=${{ inputs.tool }}-${pr_number}-${identifier}.tfplan" >> "$GITHUB_OUTPUT"
+        echo "name=$INPUTS_TOOL-${pr_number}-${identifier}.tfplan" >> "$GITHUB_OUTPUT"
 
     - if: ${{ inputs.format == 'true' }}
       id: format

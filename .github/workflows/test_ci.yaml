@@ -8,16 +8,16 @@ on:
     types: [opened, reopened, synchronize, closed]
 
 jobs:
-  # inputs:
-  #   runs-on: ubuntu-latest
-  #   name: Collect workflow inputs
+  inputs:
+    runs-on: ubuntu-latest
+    name: Collect workflow inputs
 
-  #   outputs:
-  #     directory: ${{ steps.directory.outputs.paths }}
+    outputs:
+      directory: ${{ steps.directory.outputs.paths }}
 
-  #   steps:
-  #     - id: directory
-  #       run: echo paths='["lab/eu-west-1/123456789/004_vpc","lab/eu-west-1/123456789/006_eks","lab/eu-west-1/123456789/007_eks_addons","lab/eu-west-1/123456789/008_app_roles"]' >> "$GITHUB_OUTPUT"
+    steps:
+      - id: directory
+        run: echo paths='["lab/eu-west-1/123456789/004_vpc","lab/eu-west-1/123456789/006_eks","lab/eu-west-1/123456789/007_eks_addons","lab/eu-west-1/123456789/008_app_roles"]' >> "$GITHUB_OUTPUT"
 
   ci:
     runs-on: ubuntu-latest

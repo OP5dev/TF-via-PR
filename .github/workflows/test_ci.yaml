@@ -22,8 +22,10 @@ jobs:
       fail-fast: false
       matrix:
         directory:
+          - lab/eu-west-1/123456789/004_vpc
+          - lab/eu-west-1/123456789/006_eks
           - lab/eu-west-1/123456789/007_eks_addons
-          - lab/eu-west-1/123456789/008_app_roles/main.tf
+          - lab/eu-west-1/123456789/008_app_roles
 
     steps:
       - name: Echo context

@@ -25,8 +25,8 @@ jobs:
         #   - tofu
         #   - terraform
         test:
-          - test/pass_one
-          - test/pass_zero
+          - tests/pass_one
+          - tests/pass_zero
           # - pass_character_limit
           # - fail_data_source_error
           # - fail_format_diff
@@ -57,7 +57,6 @@ jobs:
 
       - name: Provision TF
         id: tf
-        continue-on-error: true
         uses: ./
         with:
           working-directory: ${{ matrix.test }}

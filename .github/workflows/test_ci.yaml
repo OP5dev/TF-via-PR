@@ -10,6 +10,7 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-24.04
+    name: Run Tofu actions
 
     permissions:
       actions: read # Required to identify workflow run.

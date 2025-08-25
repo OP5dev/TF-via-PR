@@ -8,8 +8,8 @@ runs:
   steps:
     - shell: bash
       env:
-        INPUTS_PLAN-ENCRYPT: ${{ inputs.plan-encrypt }}
-        INPUTS_PLAN-PARITY: ${{ inputs.plan-parity }}
+        INPUTS_PLAN_ENCRYPT: ${{ inputs.plan-encrypt }}
+        INPUTS_PLAN_PARITY: ${{ inputs.plan-parity }}
         INPUTS_TOOL: ${{ inputs.tool }}
       run: |
         # Check for required tools.
@@ -18,47 +18,47 @@ runs:
         which md5sum > /dev/null 2>&1 || { echo "Please install md5sum before running this action as it is required for naming the plan file artifact uniquely."; exit 1; }
         which unzip > /dev/null 2>&1 || { echo "Please install unzip before running this action as it is required for unpacking the plan file artifact."; exit 1; }
         which "$INPUTS_TOOL" > /dev/null 2>&1 || { echo "Please install $INPUTS_TOOL before running this action as it is required for provisioning TF code."; exit 1; }
-        if [[ "$INPUTS_PLAN-ENCRYPT" ]]; then which openssl > /dev/null 2>&1 || { echo "Please install openssl before running this action as it is required for plan file encryption."; exit 1; }; fi
-        if [[ "$INPUTS_PLAN-PARITY" ]]; then which diff > /dev/null 2>&1 || { echo "Please install diff before running this action as it is required for comparing plan file parity."; exit 1; }; fi
+        if [[ "$INPUTS_PLAN_ENCRYPT" ]]; then which openssl > /dev/null 2>&1 || { echo "Please install openssl before running this action as it is required for plan file encryption."; exit 1; }; fi
+        if [[ "$INPUTS_PLAN_PARITY" ]]; then which diff > /dev/null 2>&1 || { echo "Please install diff before running this action as it is required for comparing plan file parity."; exit 1; }; fi
 
     - id: arg
       env:
-        INPUTS_ARG-AUTO-APPROVE: ${{ inputs.arg-auto-approve }}
-        INPUTS_ARG-BACKEND-CONFIG: ${{ inputs.arg-backend-config }}
-        INPUTS_ARG-BACKEND: ${{ inputs.arg-backend }}
-        INPUTS_ARG-BACKUP: ${{ inputs.arg-backup }}
-        INPUTS_ARG-CHDIR: ${{ inputs.arg-chdir || inputs.working-directory }}
-        INPUTS_ARG-CHECK: ${{ inputs.arg-check }}
-        INPUTS_ARG-COMPACT-WARNINGS: ${{ inputs.arg-compact-warnings }}
-        INPUTS_ARG-CONCISE: ${{ inputs.arg-concise }}
-        INPUTS_ARG-DESTROY: ${{ inputs.arg-destroy }}
-        INPUTS_ARG-DETAILED-EXITCODE: ${{ inputs.arg-detailed-exitcode }}
-        INPUTS_ARG-DIFF: ${{ inputs.arg-diff }}
-        INPUTS_ARG-FORCE-COPY: ${{ inputs.arg-force-copy }}
-        INPUTS_ARG-FROM-MODULE: ${{ inputs.arg-from-module }}
-        INPUTS_ARG-GENERATE-CONFIG-OUT: ${{ inputs.arg-generate-config-out }}
-        INPUTS_ARG-GET: ${{ inputs.arg-get }}
-        INPUTS_ARG-LIST: ${{ inputs.arg-list }}
-        INPUTS_ARG-LOCK-TIMEOUT: ${{ inputs.arg-lock-timeout }}
-        INPUTS_ARG-LOCK: ${{ inputs.arg-lock }}
-        INPUTS_ARG-LOCKFILE: ${{ inputs.arg-lockfile }}
-        INPUTS_ARG-MIGRATE-STATE: ${{ inputs.arg-migrate-state }}
-        INPUTS_ARG-NO-TESTS: ${{ inputs.arg-no-tests }}
-        INPUTS_ARG-PARALLELISM: ${{ inputs.arg-parallelism }}
-        INPUTS_ARG-PLUGIN-DIR: ${{ inputs.arg-plugin-dir }}
-        INPUTS_ARG-RECONFIGURE: ${{ inputs.arg-reconfigure }}
-        INPUTS_ARG-RECURSIVE: ${{ inputs.arg-recursive }}
-        INPUTS_ARG-REFRESH-ONLY: ${{ inputs.arg-refresh-only }}
-        INPUTS_ARG-REFRESH: ${{ inputs.arg-refresh }}
-        INPUTS_ARG-REPLACE: ${{ inputs.arg-replace }}
-        INPUTS_ARG-STATE-OUT: ${{ inputs.arg-state-out }}
-        INPUTS_ARG-STATE: ${{ inputs.arg-state }}
-        INPUTS_ARG-TARGET: ${{ inputs.arg-target }}
-        INPUTS_ARG-TEST-DIRECTORY: ${{ inputs.arg-test-directory }}
-        INPUTS_ARG-UPGRADE: ${{ inputs.arg-upgrade }}
-        INPUTS_ARG-VAR-FILE: ${{ inputs.arg-var-file }}
-        INPUTS_ARG-VAR: ${{ inputs.arg-var }}
-        INPUTS_ARG-WRITE: ${{ inputs.arg-write }}
+        INPUTS_ARG_AUTO_APPROVE: ${{ inputs.arg-auto-approve }}
+        INPUTS_ARG_BACKEND_CONFIG: ${{ inputs.arg-backend-config }}
+        INPUTS_ARG_BACKEND: ${{ inputs.arg-backend }}
+        INPUTS_ARG_BACKUP: ${{ inputs.arg-backup }}
+        INPUTS_ARG_CHDIR: ${{ inputs.arg-chdir || inputs.working-directory }}
+        INPUTS_ARG_CHECK: ${{ inputs.arg-check }}
+        INPUTS_ARG_COMPACT_WARNINGS: ${{ inputs.arg-compact-warnings }}
+        INPUTS_ARG_CONCISE: ${{ inputs.arg-concise }}
+        INPUTS_ARG_DESTROY: ${{ inputs.arg-destroy }}
+        INPUTS_ARG_DETAILED_EXITCODE: ${{ inputs.arg-detailed-exitcode }}
+        INPUTS_ARG_DIFF: ${{ inputs.arg-diff }}
+        INPUTS_ARG_FORCE_COPY: ${{ inputs.arg-force-copy }}
+        INPUTS_ARG_FROM_MODULE: ${{ inputs.arg-from-module }}
+        INPUTS_ARG_GENERATE_CONFIG_OUT: ${{ inputs.arg-generate-config-out }}
+        INPUTS_ARG_GET: ${{ inputs.arg-get }}
+        INPUTS_ARG_LIST: ${{ inputs.arg-list }}
+        INPUTS_ARG_LOCK_TIMEOUT: ${{ inputs.arg-lock-timeout }}
+        INPUTS_ARG_LOCK: ${{ inputs.arg-lock }}
+        INPUTS_ARG_LOCKFILE: ${{ inputs.arg-lockfile }}
+        INPUTS_ARG_MIGRATE_STATE: ${{ inputs.arg-migrate-state }}
+        INPUTS_ARG_NO_TESTS: ${{ inputs.arg-no-tests }}
+        INPUTS_ARG_PARALLELISM: ${{ inputs.arg-parallelism }}
+        INPUTS_ARG_PLUGIN_DIR: ${{ inputs.arg-plugin-dir }}
+        INPUTS_ARG_RECONFIGURE: ${{ inputs.arg-reconfigure }}
+        INPUTS_ARG_RECURSIVE: ${{ inputs.arg-recursive }}
+        INPUTS_ARG_REFRESH_ONLY: ${{ inputs.arg-refresh-only }}
+        INPUTS_ARG_REFRESH: ${{ inputs.arg-refresh }}
+        INPUTS_ARG_REPLACE: ${{ inputs.arg-replace }}
+        INPUTS_ARG_STATE_OUT: ${{ inputs.arg-state-out }}
+        INPUTS_ARG_STATE: ${{ inputs.arg-state }}
+        INPUTS_ARG_TARGET: ${{ inputs.arg-target }}
+        INPUTS_ARG_TEST_DIRECTORY: ${{ inputs.arg-test-directory }}
+        INPUTS_ARG_UPGRADE: ${{ inputs.arg-upgrade }}
+        INPUTS_ARG_VAR_FILE: ${{ inputs.arg-var-file }}
+        INPUTS_ARG_VAR: ${{ inputs.arg-var }}
+        INPUTS_ARG_WRITE: ${{ inputs.arg-write }}
         INPUTS_TOKEN: ${{ inputs.token }}
         TF_WORKSPACE: ${{ env.TF_WORKSPACE || inputs.arg-workspace }}
       shell: bash
@@ -74,42 +74,42 @@ runs:
         echo "GH_HOST=$(echo $GITHUB_SERVER_URL | sed 's/.*:\/\///')" >> "$GITHUB_ENV"
 
         # CLI arguments.
-        echo arg-auto-approve=$([[ -n "$INPUTS_ARG-AUTO-APPROVE" ]] && echo " -auto-approve" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-backend-config=$([[ -n "$INPUTS_ARG-BACKEND-CONFIG" ]] && echo " -backend-config=$INPUTS_ARG-BACKEND-CONFIG" | sed "s/,/ -backend-config=/g" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-backend=$([[ -n "$INPUTS_ARG-BACKEND" ]] && echo " -backend=$INPUTS_ARG-BACKEND" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-backup=$([[ -n "$INPUTS_ARG-BACKUP" ]] && echo " -backup=$INPUTS_ARG-BACKUP" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-chdir=$([[ -n "$INPUTS_ARG-CHDIR" ]] && echo " -chdir=$INPUTS_ARG-CHDIR" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-check=$([[ -n "$INPUTS_ARG-CHECK" ]] && echo " -check" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-compact-warnings=$([[ -n "$INPUTS_ARG-COMPACT-WARNINGS" ]] && echo " -compact-warnings" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-concise=$([[ -n "$INPUTS_ARG-CONCISE" ]] && echo " -concise" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-destroy=$([[ -n "$INPUTS_ARG-DESTROY" ]] && echo " -destroy" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-detailed-exitcode=$([[ -n "$INPUTS_ARG-DETAILED-EXITCODE" ]] && echo " -detailed-exitcode" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-diff=$([[ -n "$INPUTS_ARG-DIFF" ]] && echo " -diff" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-force-copy=$([[ -n "$INPUTS_ARG-FORCE-COPY" ]] && echo " -force-copy" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-from-module=$([[ -n "$INPUTS_ARG-FROM-MODULE" ]] && echo " -from-module=$INPUTS_ARG-FROM-MODULE" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-generate-config-out=$([[ -n "$INPUTS_ARG-GENERATE-CONFIG-OUT" ]] && echo " -generate-config-out=$INPUTS_ARG-GENERATE-CONFIG-OUT" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-get=$([[ -n "$INPUTS_ARG-GET" ]] && echo " -get=$INPUTS_ARG-GET" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-list=$([[ -n "$INPUTS_ARG-LIST" ]] && echo " -list=$INPUTS_ARG-LIST" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-lock-timeout=$([[ -n "$INPUTS_ARG-LOCK-TIMEOUT" ]] && echo " -lock-timeout=$INPUTS_ARG-LOCK-TIMEOUT" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-lock=$([[ -n "$INPUTS_ARG-LOCK" ]] && echo " -lock=$INPUTS_ARG-LOCK" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-lockfile=$([[ -n "$INPUTS_ARG-LOCKFILE" ]] && echo " -lockfile=$INPUTS_ARG-LOCKFILE" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-migrate-state=$([[ -n "$INPUTS_ARG-MIGRATE-STATE" ]] && echo " -migrate-state" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-no-tests=$([[ -n "$INPUTS_ARG-NO-TESTS" ]] && echo " -no-tests" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-parallelism=$([[ -n "$INPUTS_ARG-PARALLELISM" ]] && echo " -parallelism=$INPUTS_ARG-PARALLELISM" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-plugin-dir=$([[ -n "$INPUTS_ARG-PLUGIN-DIR" ]] && echo " -plugin-dir=$INPUTS_ARG-PLUGIN-DIR" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-reconfigure=$([[ -n "$INPUTS_ARG-RECONFIGURE" ]] && echo " -reconfigure" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-recursive=$([[ -n "$INPUTS_ARG-RECURSIVE" ]] && echo " -recursive" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-refresh-only=$([[ -n "$INPUTS_ARG-REFRESH-ONLY" ]] && echo " -refresh-only" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-refresh=$([[ -n "$INPUTS_ARG-REFRESH" ]] && echo " -refresh=$INPUTS_ARG-REFRESH" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-replace=$([[ -n "$INPUTS_ARG-REPLACE" ]] && echo " -replace=$INPUTS_ARG-REPLACE" | sed "s/,/ -replace=/g" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-state-out=$([[ -n "$INPUTS_ARG-STATE-OUT" ]] && echo " -state-out=$INPUTS_ARG-STATE-OUT" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-state=$([[ -n "$INPUTS_ARG-STATE" ]] && echo " -state=$INPUTS_ARG-STATE" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-target=$([[ -n "$INPUTS_ARG-TARGET" ]] && echo " -target=$INPUTS_ARG-TARGET" | sed "s/,/ -target=/g" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-test-directory=$([[ -n "$INPUTS_ARG-TEST-DIRECTORY" ]] && echo " -test-directory=$INPUTS_ARG-TEST-DIRECTORY" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-upgrade=$([[ -n "$INPUTS_ARG-UPGRADE" ]] && echo " -upgrade" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-var-file=$([[ -n "$INPUTS_ARG-VAR-FILE" ]] && echo " -var-file=$INPUTS_ARG-VAR-FILE" | sed "s/,/ -var-file=/g" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-var=$([[ -n "$INPUTS_ARG-VAR" ]] && echo " -var=$INPUTS_ARG-VAR" | sed "s/,/ -var=/g" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-write=$([[ -n "$INPUTS_ARG-WRITE" ]] && echo " -write=$INPUTS_ARG-WRITE" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-auto-approve=$([[ -n "$INPUTS_ARG_AUTO_APPROVE" ]] && echo " -auto-approve" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-backend-config=$([[ -n "$INPUTS_ARG_BACKEND_CONFIG" ]] && echo " -backend-config=$INPUTS_ARG_BACKEND_CONFIG" | sed "s/,/ -backend-config=/g" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-backend=$([[ -n "$INPUTS_ARG_BACKEND" ]] && echo " -backend=$INPUTS_ARG_BACKEND" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-backup=$([[ -n "$INPUTS_ARG_BACKUP" ]] && echo " -backup=$INPUTS_ARG_BACKUP" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-chdir=$([[ -n "$INPUTS_ARG_CHDIR" ]] && echo " -chdir=$INPUTS_ARG_CHDIR" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-check=$([[ -n "$INPUTS_ARG_CHECK" ]] && echo " -check" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-compact-warnings=$([[ -n "$INPUTS_ARG_COMPACT_WARNINGS" ]] && echo " -compact-warnings" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-concise=$([[ -n "$INPUTS_ARG_CONCISE" ]] && echo " -concise" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-destroy=$([[ -n "$INPUTS_ARG_DESTROY" ]] && echo " -destroy" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-detailed-exitcode=$([[ -n "$INPUTS_ARG_DETAILED_EXITCODE" ]] && echo " -detailed-exitcode" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-diff=$([[ -n "$INPUTS_ARG_DIFF" ]] && echo " -diff" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-force-copy=$([[ -n "$INPUTS_ARG_FORCE_COPY" ]] && echo " -force-copy" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-from-module=$([[ -n "$INPUTS_ARG_FROM_MODULE" ]] && echo " -from-module=$INPUTS_ARG_FROM_MODULE" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-generate-config-out=$([[ -n "$INPUTS_ARG_GENERATE_CONFIG_OUT" ]] && echo " -generate-config-out=$INPUTS_ARG_GENERATE_CONFIG_OUT" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-get=$([[ -n "$INPUTS_ARG_GET" ]] && echo " -get=$INPUTS_ARG_GET" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-list=$([[ -n "$INPUTS_ARG_LIST" ]] && echo " -list=$INPUTS_ARG_LIST" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-lock-timeout=$([[ -n "$INPUTS_ARG_LOCK_TIMEOUT" ]] && echo " -lock-timeout=$INPUTS_ARG_LOCK_TIMEOUT" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-lock=$([[ -n "$INPUTS_ARG_LOCK" ]] && echo " -lock=$INPUTS_ARG_LOCK" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-lockfile=$([[ -n "$INPUTS_ARG_LOCKFILE" ]] && echo " -lockfile=$INPUTS_ARG_LOCKFILE" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-migrate-state=$([[ -n "$INPUTS_ARG_MIGRATE_STATE" ]] && echo " -migrate-state" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-no-tests=$([[ -n "$INPUTS_ARG_NO_TESTS" ]] && echo " -no-tests" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-parallelism=$([[ -n "$INPUTS_ARG_PARALLELISM" ]] && echo " -parallelism=$INPUTS_ARG_PARALLELISM" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-plugin-dir=$([[ -n "$INPUTS_ARG_PLUGIN_DIR" ]] && echo " -plugin-dir=$INPUTS_ARG_PLUGIN_DIR" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-reconfigure=$([[ -n "$INPUTS_ARG_RECONFIGURE" ]] && echo " -reconfigure" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-recursive=$([[ -n "$INPUTS_ARG_RECURSIVE" ]] && echo " -recursive" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-refresh-only=$([[ -n "$INPUTS_ARG_REFRESH_ONLY" ]] && echo " -refresh-only" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-refresh=$([[ -n "$INPUTS_ARG_REFRESH" ]] && echo " -refresh=$INPUTS_ARG_REFRESH" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-replace=$([[ -n "$INPUTS_ARG_REPLACE" ]] && echo " -replace=$INPUTS_ARG_REPLACE" | sed "s/,/ -replace=/g" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-state-out=$([[ -n "$INPUTS_ARG_STATE_OUT" ]] && echo " -state-out=$INPUTS_ARG_STATE_OUT" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-state=$([[ -n "$INPUTS_ARG_STATE" ]] && echo " -state=$INPUTS_ARG_STATE" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-target=$([[ -n "$INPUTS_ARG_TARGET" ]] && echo " -target=$INPUTS_ARG_TARGET" | sed "s/,/ -target=/g" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-test-directory=$([[ -n "$INPUTS_ARG_TEST_DIRECTORY" ]] && echo " -test-directory=$INPUTS_ARG_TEST_DIRECTORY" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-upgrade=$([[ -n "$INPUTS_ARG_UPGRADE" ]] && echo " -upgrade" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-var-file=$([[ -n "$INPUTS_ARG_VAR_FILE" ]] && echo " -var-file=$INPUTS_ARG_VAR_FILE" | sed "s/,/ -var-file=/g" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-var=$([[ -n "$INPUTS_ARG_VAR" ]] && echo " -var=$INPUTS_ARG_VAR" | sed "s/,/ -var=/g" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-write=$([[ -n "$INPUTS_ARG_WRITE" ]] && echo " -write=$INPUTS_ARG_WRITE" || echo "") >> "$GITHUB_OUTPUT"
         echo arg-workspace=$([[ -n "$TF_WORKSPACE" ]] && echo " -workspace=$TF_WORKSPACE" || echo "") >> "$GITHUB_OUTPUT"
 
     - id: identifier

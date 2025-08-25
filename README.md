@@ -62,7 +62,7 @@ jobs:
       pull-requests: write # Required to add PR comment.
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: hashicorp/setup-terraform@v3
         with:

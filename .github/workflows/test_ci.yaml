@@ -21,9 +21,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test:
-          - tests/pass_one
-          - tests/pass_zero
+        directory:
+          - lab/eu-west-1/123456789/007_eks_addons
+          - lab/eu-west-1/123456789/008_app_roles/main.tf
 
     steps:
       - name: Echo context
@@ -46,7 +46,7 @@ jobs:
         id: tf
         uses: ./
         with:
-          working-directory: ${{ matrix.test }}
+          working-directory: ${{ matrix.directory }}
           arg-recursive: false
           arg-lock: false
           arg-get: true

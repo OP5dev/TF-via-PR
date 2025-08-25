@@ -22,13 +22,13 @@ jobs:
       matrix:
         tool:
           - tofu
-          # - terraform
+          - terraform
         test:
           - pass_one
-          # - pass_character_limit
-          # - fail_data_source_error
-          # - fail_format_diff
-          # - fail_invalid_resource_type
+          - pass_character_limit
+          - fail_data_source_error
+          - fail_format_diff
+          - fail_invalid_resource_type
 
     steps:
       - name: Echo context
@@ -75,7 +75,7 @@ jobs:
           preserve-plan: true
           retention-days: 1
 
-          comment-pr: on-diff
+          comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
           hide-args: detailed-exitcode,lock,out,refresh
           tag-actor: never
 

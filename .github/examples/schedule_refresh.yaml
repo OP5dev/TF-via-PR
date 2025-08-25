@@ -18,8 +18,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          persist-credentials: false
 
       - name: Setup TF
         uses: hashicorp/setup-terraform@v3
@@ -30,7 +28,7 @@ jobs:
         id: provision
         uses: op5dev/tf-via-pr@v13
         with:
-          working-directory: tests/pass_one
+          working-directory: path/to/directory
           command: plan
           arg-lock: false
           arg-refresh: false

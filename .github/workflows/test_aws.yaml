@@ -63,7 +63,7 @@ jobs:
 
     steps:
       - name: Authenticate AWS
-        uses: aws-actions/configure-aws-credentials@b47578312673ae6fa5b5096b330d9fbac3d116df # v4.2.1
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ vars.AWS_ROLE }}
@@ -88,7 +88,7 @@ jobs:
           tofu_wrapper: false
 
       - name: Checkout PR
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
 
@@ -120,7 +120,7 @@ jobs:
 
       - name: Checkout main
         if: ${{ failure() && github.event_name == 'merge_group' }}
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           ref: main
           persist-credentials: false
@@ -134,7 +134,7 @@ jobs:
           command: apply
           arg-auto-approve: true
           arg-lock-timeout: 3m
-          comment-pr: false
+          comment-pr: never
 
   Notify:
     runs-on: [ubuntu-24.04]

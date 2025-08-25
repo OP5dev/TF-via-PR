@@ -232,7 +232,7 @@ runs:
         ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} show -json tfplan.parity | jq --sort-keys '[(.resource_changes? // [])[] | select(.change.actions != ["no-op"])]' > tfplan.new
         ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} show -json tfplan | jq --sort-keys '[(.resource_changes? // [])[] | select(.change.actions != ["no-op"])]' > tfplan.old
         # If both plan files are identical, then replace the old plan file with the new one to prevent avoidable stale apply.
-        diff tfplan.new tfplan.old && mv --force --verbose "${{ format('{0}{1}tfplan.parity', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}" "${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}"
+        diff --brief tfplan.new tfplan.old && mv --force --verbose "${{ format('{0}{1}tfplan.parity', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}" "${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}"
         rm --force tfplan.new tfplan.old "${{ format('{0}{1}tfplan.parity', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}"
 
     - id: apply
@@ -263,7 +263,7 @@ runs:
     - id: post
       if: ${{ !cancelled() && steps.identifier.outcome == 'success' && contains(fromJSON('["plan", "apply", "init"]'), inputs.command) }}
       env:
-        exitcode: ${{ steps.apply.outputs.exit_code || steps.plan.outputs.exit_code || steps.validate.outputs.exit_code || steps.workspace.outputs.exit_code || steps.initialize.outputs.exit_code || steps.format.outputs.exit_code }}
+        exitcode: ${{ steps.apply.outputs.exit_code || steps.plan.outputs.exit_code || steps.validate.outputs.exit_code || steps.initialize.outputs.exit_code || steps.format.outputs.exit_code }}
         GH_MATRIX: ${{ toJSON(matrix) }}
         PRESERVE_PLAN: ${{ inputs.preserve-plan }}
       shell: bash
@@ -272,13 +272,13 @@ runs:
         # Parse the "tf.command.txt" file.
         command=$(cat tf.command.txt)
 
-        # Remove each comma-delemited "hide-args" argument from the command.
+        # Remove each comma-delimited "hide-args" argument from the command.
         IFS=',' read -ra hide_args <<< "${{ inputs.hide-args }}"
         for arg in "${hide_args[@]}"; do
           command=$(echo "$command" | grep --invert-match "^ -${arg}" || true)
         done
 
-        # Conversely, show each comma-delemited "show-args" argument in the command.
+        # Conversely, show each comma-delimited "show-args" argument in the command.
         command_append=""
         IFS=',' read -ra show_args <<< "${{ inputs.show-args }}"
         for arg in "${show_args[@]}"; do
@@ -367,13 +367,11 @@ runs:
         # Set flags for creating PR comment and tagging actor.
         create_comment=""
         tag_actor=""
-        if [[ $exitcode -ne 0 ]]; then
-          if [[ "${{ inputs.comment-pr }}" == "on-change" ]]; then create_comment="true"; fi
-          if [[ "${{ inputs.tag-actor }}" == "on-change" ]]; then tag_actor="true"; fi
+        if [[ "${{ inputs.tag-actor }}" == "always" || "${{ inputs.tag-actor }}" == "true" ]]; then
+          tag_actor="@"
+        elif [[ ("${{ inputs.tag-actor }}" == "on-diff" || "${{ inputs.tag-actor }}" == "on-change") && "$exitcode" -ne 0 ]]; then
+          tag_actor="@"
         fi
-        if [[ "${{ inputs.comment-pr }}" == "always" ]]; then create_comment="true"; fi
-        if [[ "${{ inputs.tag-actor }}" == "always" ]]; then tag_actor="true"; fi
-        if [[ "$tag_actor" == "true" ]]; then handle="@"; else handle=""; fi
 
         # Collate body content.
         body=$(cat <<EOBODYTFVIAPR
@@ -387,7 +385,7 @@ runs:
         <details${{ inputs.expand-summary == 'true' && ' open' || '' }}><summary>${summary}</br>
 
         <!-- placeholder-4 -->
-        ###### By ${handle}${{ github.triggering_actor }} at ${{ github.event.pull_request.updated_at || github.event.comment.created_at || github.event.head_commit.timestamp || github.event.merge_group.head_commit.timestamp }} [(view log)](${run_url}).
+        ###### By ${tag_actor}${{ github.triggering_actor }} at ${{ github.event.pull_request.updated_at || github.event.comment.created_at || github.event.head_commit.timestamp || github.event.merge_group.head_commit.timestamp }} [(view log)](${run_url}).
         </summary>
 
         \`\`\`${syntax}
@@ -404,38 +402,6 @@ runs:
         echo "$body" >> $GITHUB_STEP_SUMMARY
         echo "comment_body<<EOCOMMENTTFVIAPR"$'\n'"$body"$'\n'EOCOMMENTTFVIAPR >> "$GITHUB_OUTPUT"
 
-        # Post PR comment if configured and PR exists.
-        if [[ "$create_comment" == "true" && "${{ steps.identifier.outputs.pr }}" != "0" ]]; then
-          # Check if the PR contains a bot comment with the same identifier.
-          list_comments=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method GET --paginate)
-          bot_comment=$(echo "$list_comments" | jq --raw-output --arg identifier "${{ steps.identifier.outputs.name }}" '.[] | select(.user.type == "Bot") | select(.body | contains($identifier)) | .id' | tail -n 1)
-
-          if [[ -n "$bot_comment" ]]; then
-            if [[ "${{ inputs.comment-method }}" == "recreate" ]]; then
-              # Delete previous comment before posting a new one.
-              gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method DELETE
-              pr_comment=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method POST --field "body=${body}")
-              echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id')" >> "$GITHUB_OUTPUT"
-            elif [[ "${{ inputs.comment-method }}" == "update" ]]; then
-              # Update existing comment.
-              pr_comment=$(gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method PATCH --field "body=${body}")
-              echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id')" >> "$GITHUB_OUTPUT"
-            fi
-          else
-            # Post new comment.
-            pr_comment=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method POST --field "body=${body}")
-            echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id')" >> "$GITHUB_OUTPUT"
-          fi
-        elif [[ "${{ inputs.comment-pr }}" == "on-change" && "${{ steps.identifier.outputs.pr }}" != "0" ]]; then
-          # Delete previous comment due to no changes.
-          list_comments=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method GET --paginate)
-          bot_comment=$(echo "$list_comments" | jq --raw-output --arg identifier "${{ steps.identifier.outputs.name }}" '.[] | select(.user.type == "Bot") | select(.body | contains($identifier)) | .id' | tail -n 1)
-
-          if [[ -n "$bot_comment" ]]; then
-            gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method DELETE
-          fi
-        fi
-
         # Optionally delete the plan file.
         if [[ "$PRESERVE_PLAN" != "true" ]]; then
           rm --force "${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}"
@@ -443,6 +409,43 @@ runs:
 
         # Clean up files.
         rm --force tf.command.txt tf.console.txt tf.diff.txt
+
+        # Check if the PR contains a bot comment with the same identifier.
+        list_comments=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method GET --paginate)
+        bot_comment=$(echo "$list_comments" | jq --raw-output --arg identifier "${{ steps.identifier.outputs.name }}" '.[] | select(.user.type == "Bot") | select(.body | contains($identifier)) | .id' | tail -n 1)
+
+        # Determine if a PR comment should be created.
+        if [[ "${{ inputs.comment-pr }}" == "always" && "${{ steps.identifier.outputs.pr }}" -ne 0 ]]; then
+          create_comment="true"
+        elif [[ ("${{ inputs.comment-pr }}" == "on-diff" || "${{ inputs.comment-pr }}" == "on-change") && "$exitcode" -ne 0 && "${{ steps.identifier.outputs.pr }}" -ne 0 ]]; then
+          create_comment="true"
+        elif [[ ("${{ inputs.comment-pr }}" == "on-diff" || "${{ inputs.comment-pr }}" == "on-change") && "$exitcode" -eq 0 && -n "$bot_comment" ]]; then
+          gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method DELETE
+          exit 0
+        fi
+
+        # Exit early if no comment is needed.
+        if [[ "$create_comment" != "true" ]]; then
+          exit 0
+        fi
+
+        # Create PR comment based on configuration and existing comment.
+        if [[ -n "$bot_comment" ]]; then
+          if [[ "${{ inputs.comment-method }}" == "update" ]]; then
+            # Update existing comment.
+            pr_comment=$(gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method PATCH --field "body=${body}")
+            echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id')" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ inputs.comment-method }}" == "recreate" ]]; then
+            # Delete previous comment before posting a new one.
+            gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method DELETE
+            pr_comment=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method POST --field "body=${body}")
+            echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id')" >> "$GITHUB_OUTPUT"
+          fi
+        else
+          # Post new comment.
+          pr_comment=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method POST --field "body=${body}")
+          echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id')" >> "$GITHUB_OUTPUT"
+        fi
 
 outputs:
   check-id:
@@ -462,7 +465,7 @@ outputs:
     value: ${{ steps.post.outputs.diff }}
   exitcode:
     description: "Exit code of the last TF command."
-    value: ${{ steps.apply.outputs.exit_code || steps.plan.outputs.exit_code || steps.validate.outputs.exit_code || steps.workspace.outputs.exit_code || steps.initialize.outputs.exit_code || steps.format.outputs.exit_code }}
+    value: ${{ steps.apply.outputs.exit_code || steps.plan.outputs.exit_code || steps.validate.outputs.exit_code || steps.initialize.outputs.exit_code || steps.format.outputs.exit_code }}
   identifier:
     description: "Unique name of the workflow run and artifact."
     value: ${{ steps.identifier.outputs.name }}
@@ -497,7 +500,7 @@ inputs:
     required: false
   comment-pr:
     default: "always"
-    description: "Add a PR comment: `always`, `on-change`, or `never` (e.g., `always`)."
+    description: "Add a PR comment: `always`, `on-diff`, or `never` (e.g., `always`)."
     required: false
   expand-diff:
     default: "false"
@@ -545,7 +548,7 @@ inputs:
     required: false
   tag-actor:
     default: "always"
-    description: "Tag the workflow triggering actor: `always`, `on-change`, or `never` (e.g., `always`)."
+    description: "Tag the workflow triggering actor: `always`, `on-diff`, or `never` (e.g., `always`)."
     required: false
   token:
     default: ${{ github.token }}

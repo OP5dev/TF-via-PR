@@ -6,11 +6,11 @@ description: Plan and apply Terraform/OpenTofu via PR automation, using best pra
 runs:
   using: composite
   steps:
-    - shell: bash
-      env:
+    - env:
         INPUTS_PLAN_ENCRYPT: ${{ inputs.plan-encrypt }}
         INPUTS_PLAN_PARITY: ${{ inputs.plan-parity }}
         INPUTS_TOOL: ${{ inputs.tool }}
+      shell: bash
       run: |
         # Check for required tools.
         which gh > /dev/null 2>&1 || { echo "Please install GitHub CLI before running this action as it is required for interacting with GitHub."; exit 1; }
@@ -139,17 +139,19 @@ runs:
         # Generate identifier for the workflow run using MD5 hashing algorithm for concise and unique naming.
         identifier="${{ steps.arg.outputs.arg-chdir }}${{ steps.arg.outputs.arg-workspace }}${{ steps.arg.outputs.arg-backend-config }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }}${{ steps.arg.outputs.arg-destroy }}"
         identifier=$(echo -n "$identifier" | md5sum | awk '{print $1}')
-        echo "name=$INPUTS_TOOL-${pr_number}-${identifier}.tfplan" >> "$GITHUB_OUTPUT"
+        echo "name=${INPUTS_TOOL}-${pr_number}-${identifier}.tfplan" >> "$GITHUB_OUTPUT"
 
     - if: ${{ inputs.format == 'true' }}
       id: format
+      env:
+        INPUTS_TOOL: ${{ inputs.tool }}
       shell: bash
       run: |
         # TF format.
         trap 'exit_code="$?"; echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"' EXIT
         args="${{ steps.arg.outputs.arg-check }}${{ steps.arg.outputs.arg-diff }}${{ steps.arg.outputs.arg-list }}${{ steps.arg.outputs.arg-recursive }}${{ steps.arg.outputs.arg-write }}"
-        echo "${{ inputs.tool }} fmt${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
-        ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} fmt${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
+        echo "$INPUTS_TOOL fmt${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
+        ${INPUTS_TOOL}${{ steps.arg.outputs.arg-chdir }} fmt${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
 
     - if: ${{ contains(fromJSON('["plan", "apply", "init"]'), inputs.command) }}
       id: initialize

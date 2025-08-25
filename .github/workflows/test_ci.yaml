@@ -75,7 +75,7 @@ jobs:
           preserve-plan: true
           retention-days: 1
 
-          comment-pr: always
+          comment-pr: on-change
           hide-args: detailed-exitcode,lock,out,refresh
           tag-actor: never
 

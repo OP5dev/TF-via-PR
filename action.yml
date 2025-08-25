@@ -23,13 +23,50 @@ runs:
 
     - id: arg
       env:
+        INPUTS_ARG-AUTO-APPROVE: ${{ inputs.arg-auto-approve }}
+        INPUTS_ARG-BACKEND-CONFIG: ${{ inputs.arg-backend-config }}
+        INPUTS_ARG-BACKEND: ${{ inputs.arg-backend }}
+        INPUTS_ARG-BACKUP: ${{ inputs.arg-backup }}
+        INPUTS_ARG-CHDIR: ${{ inputs.arg-chdir || inputs.working-directory }}
+        INPUTS_ARG-CHECK: ${{ inputs.arg-check }}
+        INPUTS_ARG-COMPACT-WARNINGS: ${{ inputs.arg-compact-warnings }}
+        INPUTS_ARG-CONCISE: ${{ inputs.arg-concise }}
+        INPUTS_ARG-DESTROY: ${{ inputs.arg-destroy }}
+        INPUTS_ARG-DETAILED-EXITCODE: ${{ inputs.arg-detailed-exitcode }}
+        INPUTS_ARG-DIFF: ${{ inputs.arg-diff }}
+        INPUTS_ARG-FORCE-COPY: ${{ inputs.arg-force-copy }}
+        INPUTS_ARG-FROM-MODULE: ${{ inputs.arg-from-module }}
+        INPUTS_ARG-GENERATE-CONFIG-OUT: ${{ inputs.arg-generate-config-out }}
+        INPUTS_ARG-GET: ${{ inputs.arg-get }}
+        INPUTS_ARG-LIST: ${{ inputs.arg-list }}
+        INPUTS_ARG-LOCK-TIMEOUT: ${{ inputs.arg-lock-timeout }}
+        INPUTS_ARG-LOCK: ${{ inputs.arg-lock }}
+        INPUTS_ARG-LOCKFILE: ${{ inputs.arg-lockfile }}
+        INPUTS_ARG-MIGRATE-STATE: ${{ inputs.arg-migrate-state }}
+        INPUTS_ARG-NO-TESTS: ${{ inputs.arg-no-tests }}
+        INPUTS_ARG-PARALLELISM: ${{ inputs.arg-parallelism }}
+        INPUTS_ARG-PLUGIN-DIR: ${{ inputs.arg-plugin-dir }}
+        INPUTS_ARG-RECONFIGURE: ${{ inputs.arg-reconfigure }}
+        INPUTS_ARG-RECURSIVE: ${{ inputs.arg-recursive }}
+        INPUTS_ARG-REFRESH-ONLY: ${{ inputs.arg-refresh-only }}
+        INPUTS_ARG-REFRESH: ${{ inputs.arg-refresh }}
+        INPUTS_ARG-REPLACE: ${{ inputs.arg-replace }}
+        INPUTS_ARG-STATE-OUT: ${{ inputs.arg-state-out }}
+        INPUTS_ARG-STATE: ${{ inputs.arg-state }}
+        INPUTS_ARG-TARGET: ${{ inputs.arg-target }}
+        INPUTS_ARG-TEST-DIRECTORY: ${{ inputs.arg-test-directory }}
+        INPUTS_ARG-UPGRADE: ${{ inputs.arg-upgrade }}
+        INPUTS_ARG-VAR-FILE: ${{ inputs.arg-var-file }}
+        INPUTS_ARG-VAR: ${{ inputs.arg-var }}
+        INPUTS_ARG-WRITE: ${{ inputs.arg-write }}
+        INPUTS_TOKEN: ${{ inputs.token }}
         TF_WORKSPACE: ${{ env.TF_WORKSPACE || inputs.arg-workspace }}
       shell: bash
       run: |
         # Populate variables.
         # Environment variables.
         echo "GH_API=X-GitHub-Api-Version:2022-11-28" >> "$GITHUB_ENV"
-        echo "GH_TOKEN=${{ inputs.token }}" >> "$GITHUB_ENV"
+        echo "GH_TOKEN=$INPUTS_TOKEN" >> "$GITHUB_ENV"
         echo "TF_CLI_ARGS=$([[ -n "${{ env.TF_CLI_ARGS }}" ]] && echo "${{ env.TF_CLI_ARGS }} -no-color" || echo "-no-color")" >> "$GITHUB_ENV"
         echo "TF_IN_AUTOMATION=true" >> "$GITHUB_ENV"
         echo "TF_INPUT=false" >> "$GITHUB_ENV"
@@ -37,42 +74,42 @@ runs:
         echo "GH_HOST=$(echo $GITHUB_SERVER_URL | sed 's/.*:\/\///')" >> "$GITHUB_ENV"
 
         # CLI arguments.
-        echo arg-auto-approve=$([[ -n "${{ inputs.arg-auto-approve }}" ]] && echo " -auto-approve" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-backend-config=$([[ -n "${{ inputs.arg-backend-config }}" ]] && echo " -backend-config=${{ inputs.arg-backend-config }}" | sed "s/,/ -backend-config=/g" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-backend=$([[ -n "${{ inputs.arg-backend }}" ]] && echo " -backend=${{ inputs.arg-backend }}" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-backup=$([[ -n "${{ inputs.arg-backup }}" ]] && echo " -backup=${{ inputs.arg-backup }}" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-chdir=$([[ -n "${{ inputs.arg-chdir || inputs.working-directory }}" ]] && echo " -chdir=${{ inputs.arg-chdir || inputs.working-directory }}" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-check=$([[ -n "${{ inputs.arg-check }}" ]] && echo " -check" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-compact-warnings=$([[ -n "${{ inputs.arg-compact-warnings }}" ]] && echo " -compact-warnings" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-concise=$([[ -n "${{ inputs.arg-concise }}" ]] && echo " -concise" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-destroy=$([[ -n "${{ inputs.arg-destroy }}" ]] && echo " -destroy" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-detailed-exitcode=$([[ -n "${{ inputs.arg-detailed-exitcode }}" ]] && echo " -detailed-exitcode" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-diff=$([[ -n "${{ inputs.arg-diff }}" ]] && echo " -diff" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-force-copy=$([[ -n "${{ inputs.arg-force-copy }}" ]] && echo " -force-copy" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-from-module=$([[ -n "${{ inputs.arg-from-module }}" ]] && echo " -from-module=${{ inputs.arg-from-module }}" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-generate-config-out=$([[ -n "${{ inputs.arg-generate-config-out }}" ]] && echo " -generate-config-out=${{ inputs.arg-generate-config-out }}" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-get=$([[ -n "${{ inputs.arg-get }}" ]] && echo " -get=${{ inputs.arg-get }}" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-list=$([[ -n "${{ inputs.arg-list }}" ]] && echo " -list=${{ inputs.arg-list }}" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-lock-timeout=$([[ -n "${{ inputs.arg-lock-timeout }}" ]] && echo " -lock-timeout=${{ inputs.arg-lock-timeout }}" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-lock=$([[ -n "${{ inputs.arg-lock }}" ]] && echo " -lock=${{ inputs.arg-lock }}" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-lockfile=$([[ -n "${{ inputs.arg-lockfile }}" ]] && echo " -lockfile=${{ inputs.arg-lockfile }}" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-migrate-state=$([[ -n "${{ inputs.arg-migrate-state }}" ]] && echo " -migrate-state" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-no-tests=$([[ -n "${{ inputs.arg-no-tests }}" ]] && echo " -no-tests" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-parallelism=$([[ -n "${{ inputs.arg-parallelism }}" ]] && echo " -parallelism=${{ inputs.arg-parallelism }}" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-plugin-dir=$([[ -n "${{ inputs.arg-plugin-dir }}" ]] && echo " -plugin-dir=${{ inputs.arg-plugin-dir }}" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-reconfigure=$([[ -n "${{ inputs.arg-reconfigure }}" ]] && echo " -reconfigure" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-recursive=$([[ -n "${{ inputs.arg-recursive }}" ]] && echo " -recursive" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-refresh-only=$([[ -n "${{ inputs.arg-refresh-only }}" ]] && echo " -refresh-only" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-refresh=$([[ -n "${{ inputs.arg-refresh }}" ]] && echo " -refresh=${{ inputs.arg-refresh }}" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-replace=$([[ -n "${{ inputs.arg-replace }}" ]] && echo " -replace=${{ inputs.arg-replace }}" | sed "s/,/ -replace=/g" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-state-out=$([[ -n "${{ inputs.arg-state-out }}" ]] && echo " -state-out=${{ inputs.arg-state-out }}" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-state=$([[ -n "${{ inputs.arg-state }}" ]] && echo " -state=${{ inputs.arg-state }}" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-target=$([[ -n "${{ inputs.arg-target }}" ]] && echo " -target=${{ inputs.arg-target }}" | sed "s/,/ -target=/g" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-test-directory=$([[ -n "${{ inputs.arg-test-directory }}" ]] && echo " -test-directory=${{ inputs.arg-test-directory }}" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-upgrade=$([[ -n "${{ inputs.arg-upgrade }}" ]] && echo " -upgrade" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-var-file=$([[ -n "${{ inputs.arg-var-file }}" ]] && echo " -var-file=${{ inputs.arg-var-file }}" | sed "s/,/ -var-file=/g" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-var=$([[ -n "${{ inputs.arg-var }}" ]] && echo " -var=${{ inputs.arg-var }}" | sed "s/,/ -var=/g" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-write=$([[ -n "${{ inputs.arg-write }}" ]] && echo " -write=${{ inputs.arg-write }}" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-auto-approve=$([[ -n "$INPUTS_ARG-AUTO-APPROVE" ]] && echo " -auto-approve" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-backend-config=$([[ -n "$INPUTS_ARG-BACKEND-CONFIG" ]] && echo " -backend-config=$INPUTS_ARG-BACKEND-CONFIG" | sed "s/,/ -backend-config=/g" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-backend=$([[ -n "$INPUTS_ARG-BACKEND" ]] && echo " -backend=$INPUTS_ARG-BACKEND" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-backup=$([[ -n "$INPUTS_ARG-BACKUP" ]] && echo " -backup=$INPUTS_ARG-BACKUP" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-chdir=$([[ -n "$INPUTS_ARG-CHDIR" ]] && echo " -chdir=$INPUTS_ARG-CHDIR" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-check=$([[ -n "$INPUTS_ARG-CHECK" ]] && echo " -check" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-compact-warnings=$([[ -n "$INPUTS_ARG-COMPACT-WARNINGS" ]] && echo " -compact-warnings" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-concise=$([[ -n "$INPUTS_ARG-CONCISE" ]] && echo " -concise" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-destroy=$([[ -n "$INPUTS_ARG-DESTROY" ]] && echo " -destroy" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-detailed-exitcode=$([[ -n "$INPUTS_ARG-DETAILED-EXITCODE" ]] && echo " -detailed-exitcode" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-diff=$([[ -n "$INPUTS_ARG-DIFF" ]] && echo " -diff" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-force-copy=$([[ -n "$INPUTS_ARG-FORCE-COPY" ]] && echo " -force-copy" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-from-module=$([[ -n "$INPUTS_ARG-FROM-MODULE" ]] && echo " -from-module=$INPUTS_ARG-FROM-MODULE" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-generate-config-out=$([[ -n "$INPUTS_ARG-GENERATE-CONFIG-OUT" ]] && echo " -generate-config-out=$INPUTS_ARG-GENERATE-CONFIG-OUT" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-get=$([[ -n "$INPUTS_ARG-GET" ]] && echo " -get=$INPUTS_ARG-GET" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-list=$([[ -n "$INPUTS_ARG-LIST" ]] && echo " -list=$INPUTS_ARG-LIST" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-lock-timeout=$([[ -n "$INPUTS_ARG-LOCK-TIMEOUT" ]] && echo " -lock-timeout=$INPUTS_ARG-LOCK-TIMEOUT" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-lock=$([[ -n "$INPUTS_ARG-LOCK" ]] && echo " -lock=$INPUTS_ARG-LOCK" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-lockfile=$([[ -n "$INPUTS_ARG-LOCKFILE" ]] && echo " -lockfile=$INPUTS_ARG-LOCKFILE" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-migrate-state=$([[ -n "$INPUTS_ARG-MIGRATE-STATE" ]] && echo " -migrate-state" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-no-tests=$([[ -n "$INPUTS_ARG-NO-TESTS" ]] && echo " -no-tests" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-parallelism=$([[ -n "$INPUTS_ARG-PARALLELISM" ]] && echo " -parallelism=$INPUTS_ARG-PARALLELISM" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-plugin-dir=$([[ -n "$INPUTS_ARG-PLUGIN-DIR" ]] && echo " -plugin-dir=$INPUTS_ARG-PLUGIN-DIR" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-reconfigure=$([[ -n "$INPUTS_ARG-RECONFIGURE" ]] && echo " -reconfigure" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-recursive=$([[ -n "$INPUTS_ARG-RECURSIVE" ]] && echo " -recursive" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-refresh-only=$([[ -n "$INPUTS_ARG-REFRESH-ONLY" ]] && echo " -refresh-only" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-refresh=$([[ -n "$INPUTS_ARG-REFRESH" ]] && echo " -refresh=$INPUTS_ARG-REFRESH" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-replace=$([[ -n "$INPUTS_ARG-REPLACE" ]] && echo " -replace=$INPUTS_ARG-REPLACE" | sed "s/,/ -replace=/g" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-state-out=$([[ -n "$INPUTS_ARG-STATE-OUT" ]] && echo " -state-out=$INPUTS_ARG-STATE-OUT" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-state=$([[ -n "$INPUTS_ARG-STATE" ]] && echo " -state=$INPUTS_ARG-STATE" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-target=$([[ -n "$INPUTS_ARG-TARGET" ]] && echo " -target=$INPUTS_ARG-TARGET" | sed "s/,/ -target=/g" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-test-directory=$([[ -n "$INPUTS_ARG-TEST-DIRECTORY" ]] && echo " -test-directory=$INPUTS_ARG-TEST-DIRECTORY" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-upgrade=$([[ -n "$INPUTS_ARG-UPGRADE" ]] && echo " -upgrade" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-var-file=$([[ -n "$INPUTS_ARG-VAR-FILE" ]] && echo " -var-file=$INPUTS_ARG-VAR-FILE" | sed "s/,/ -var-file=/g" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-var=$([[ -n "$INPUTS_ARG-VAR" ]] && echo " -var=$INPUTS_ARG-VAR" | sed "s/,/ -var=/g" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-write=$([[ -n "$INPUTS_ARG-WRITE" ]] && echo " -write=$INPUTS_ARG-WRITE" || echo "") >> "$GITHUB_OUTPUT"
         echo arg-workspace=$([[ -n "$TF_WORKSPACE" ]] && echo " -workspace=$TF_WORKSPACE" || echo "") >> "$GITHUB_OUTPUT"
 
     - id: identifier

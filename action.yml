@@ -417,9 +417,9 @@ runs:
         # Determine if a PR comment should be created.
         if [[ "${{ inputs.comment-pr }}" == "always" && "${{ steps.identifier.outputs.pr }}" -ne 0 ]]; then
           create_comment="true"
-        elif [[ ("${{ inputs.comment-pr }}" == "on-diff" || "${{ inputs.comment-pr }}" == "on-change") && "$exitcode" -ne 0 && "${{ steps.identifier.outputs.pr }}" -ne 0]]; then
+        elif [[ ("${{ inputs.comment-pr }}" == "on-diff" || "${{ inputs.comment-pr }}" == "on-change") && "$exitcode" -ne 0 && "${{ steps.identifier.outputs.pr }}" -ne 0 ]]; then
           create_comment="true"
-        elif [[ ("${{ inputs.comment-pr }}" == "on-diff" || "${{ inputs.comment-pr }}" == "on-change") && "$exitcode" -eq 0 && -n "$bot_comment"]]; then
+        elif [[ ("${{ inputs.comment-pr }}" == "on-diff" || "${{ inputs.comment-pr }}" == "on-change") && "$exitcode" -eq 0 && -n "$bot_comment" ]]; then
           gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method DELETE
           exit 0
         fi

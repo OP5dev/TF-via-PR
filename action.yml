@@ -194,6 +194,8 @@ runs:
 
     - if: ${{ inputs.command == 'apply' && inputs.arg-auto-approve != 'true' && inputs.plan-file == '' }}
       id: download
+      env:
+        INPUTS_ARG_CHDIR: ${{ inputs.arg-chdir || inputs.working-directory }}
       shell: bash
       run: |
         # Download plan file.
@@ -203,7 +205,7 @@ runs:
         gh api /repos/${{ github.repository }}/actions/artifacts/${artifact_id}/zip --header "$GH_API" --method GET > "${{ steps.identifier.outputs.name }}.zip"
 
         # Unzip the plan file to the working directory, then clean up the zip file.
-        unzip "${{ steps.identifier.outputs.name }}.zip" -d "${{ inputs.arg-chdir || inputs.working-directory }}"
+        unzip "${{ steps.identifier.outputs.name }}.zip" -d "$INPUTS_ARG_CHDIR"
         rm --force "${{ steps.identifier.outputs.name }}.zip"
 
     - if: ${{ inputs.plan-encrypt != '' && steps.download.outcome == 'success' }}

@@ -82,7 +82,7 @@ jobs:
           fi
 
       - name: Setup Tofu
-        uses: opentofu/setup-opentofu@592200bd4b9bbf4772ace78f887668b1aee8f716 # v1.0.5
+        uses: opentofu/setup-opentofu@000eeb8522f0572907c393e8151076c205fdba1b # v1.0.6
         with:
           tofu_version: latest
           tofu_wrapper: false

@@ -161,7 +161,7 @@ runs:
       run: |
         # TF initialize.
         trap 'exit_code="$?"; echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"' EXIT
-        args="${{ steps.arg.outputs.arg-backend-config }}${{ steps.arg.outputs.arg-backend }}${{ inputs.tool == 'tofu' && steps.arg.outputs.arg-var-file || '' }}${{ inputs.tool == 'tofu' && steps.arg.outputs.arg-var || '' }}${{ steps.arg.outputs.arg-force-copy }}${{ steps.arg.outputs.arg-from-module }}${{ steps.arg.outputs.arg-get }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-lockfile }}${{ steps.arg.outputs.arg-migrate-state }}${{ steps.arg.outputs.arg-plugin-dir }}${{ steps.arg.outputs.arg-reconfigure }}${{ steps.arg.outputs.arg-test-directory }}${{ steps.arg.outputs.arg-upgrade }}"
+        args="${{ steps.arg.outputs.arg-backend-config }}${{ steps.arg.outputs.arg-backend }}${{ env.INPUTS_TOOL == 'tofu' && steps.arg.outputs.arg-var-file || '' }}${{ env.INPUTS_TOOL == 'tofu' && steps.arg.outputs.arg-var || '' }}${{ steps.arg.outputs.arg-force-copy }}${{ steps.arg.outputs.arg-from-module }}${{ steps.arg.outputs.arg-get }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-lockfile }}${{ steps.arg.outputs.arg-migrate-state }}${{ steps.arg.outputs.arg-plugin-dir }}${{ steps.arg.outputs.arg-reconfigure }}${{ steps.arg.outputs.arg-test-directory }}${{ steps.arg.outputs.arg-upgrade }}"
         echo "$INPUTS_TOOL init${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
         $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} init${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
 
@@ -173,7 +173,7 @@ runs:
       run: |
         # TF validate.
         trap 'exit_code="$?"; echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"' EXIT
-        args="${{ inputs.tool == 'tofu' && steps.arg.outputs.arg-var-file || '' }}${{ inputs.tool == 'tofu' && steps.arg.outputs.arg-var || '' }}${{ steps.arg.outputs.arg-no-tests }}${{ steps.arg.outputs.arg-test-directory }}"
+        args="${{ env.INPUTS_TOOL == 'tofu' && steps.arg.outputs.arg-var-file || '' }}${{ env.INPUTS_TOOL == 'tofu' && steps.arg.outputs.arg-var || '' }}${{ steps.arg.outputs.arg-no-tests }}${{ steps.arg.outputs.arg-test-directory }}"
         echo "$INPUTS_TOOL validate${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
         $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} validate${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
 

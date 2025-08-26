@@ -276,8 +276,8 @@ runs:
         INPUTS_ARG_CHDIR: ${{ inputs.arg-chdir || inputs.working-directory }}
         INPUTS_PLAN_FILE: ${{ inputs.plan-file }}
         INPUTS_TOOL: ${{ inputs.tool }}
-        path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
         parity_path: ${{ format('{0}{1}tfplan.parity', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
+        path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       shell: bash
       run: |
         # TF plan parity.
@@ -294,27 +294,29 @@ runs:
     - id: apply
       if: ${{ inputs.command == 'apply' }}
       env:
+        INPUTS_ARG_AUTO_APPROVE: ${{ inputs.arg-auto-approve }}
         INPUTS_PLAN_FILE: ${{ inputs.plan-file }}
-        PLAN_PARITY: ${{ inputs.plan-parity }}
+        INPUTS_PLAN_PARITY: ${{ inputs.plan-parity }}
+        INPUTS_TOOL: ${{ inputs.tool }}
         path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       shell: bash
       run: |
         # TF apply.
         trap 'exit_code="$?"; echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"' EXIT
         # If arg-auto-approve is true, then pass in variables, otherwise pass in the plan file without variables.
-        if [[ "${{ inputs.arg-auto-approve }}" == "true" ]]; then
+        if [[ "$INPUTS_ARG_AUTO_APPROVE" == "true" ]]; then
           plan="${{ steps.arg.outputs.arg-auto-approve }}"
           var_file="${{ steps.arg.outputs.arg-var-file }}"
           var="${{ steps.arg.outputs.arg-var }}"
         else
-          if [[ -n "$INPUTS_PLAN_FILE" && "$PLAN_PARITY" != "true" ]]; then mv --force --verbose "$INPUTS_PLAN_FILE" "$path" 2>/dev/null; fi
+          if [[ -n "$INPUTS_PLAN_FILE" && "$INPUTS_PLAN_PARITY" != "true" ]]; then mv --force --verbose "$INPUTS_PLAN_FILE" "$path" 2>/dev/null; fi
           plan=" tfplan"
           var_file=""
           var=""
         fi
         args="${{ steps.arg.outputs.arg-destroy }}${var_file}${var}${{ steps.arg.outputs.arg-backup }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-state-out }}${{ steps.arg.outputs.arg-state }}${{ steps.arg.outputs.arg-target }}${plan}"
-        echo "${{ inputs.tool }} apply${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
-        ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} apply${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
+        echo "$INPUTS_TOOL apply${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
+        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} apply${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
 
     - id: post
       if: ${{ !cancelled() && steps.identifier.outcome == 'success' && contains(fromJSON('["plan", "apply", "init"]'), inputs.command) }}

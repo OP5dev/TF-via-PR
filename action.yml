@@ -221,10 +221,12 @@ runs:
         mv --force --verbose "$path.decrypted" "$path"
 
     - if: ${{ steps.plan.outcome == 'success' || steps.download.outcome == 'success' }}
+      env:
+        INPUTS_TOOL: ${{ inputs.tool }}
       shell: bash
       run: |
         # TF show.
-        ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} show tfplan > tf.console.txt
+        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} show tfplan > tf.console.txt
 
         # Diff of changes.
         # Filter lines starting with "  # " and save to tf.diff.txt, then prepend diff-specific symbols based on specific keywords.

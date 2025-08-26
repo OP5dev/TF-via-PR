@@ -239,7 +239,7 @@ runs:
 
     - if: ${{ inputs.plan-encrypt != '' && steps.plan.outcome == 'success' }}
       env:
-        PRESERVE_PLAN: ${{ inputs.preserve-plan }}
+        INPUTS_PRESERVE_PLAN: ${{ inputs.preserve-plan }}
         pass: ${{ inputs.plan-encrypt }}
         path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       shell: bash
@@ -250,7 +250,7 @@ runs:
         openssl enc -aes-256-ctr -pbkdf2 -salt -in "$path" -out "$path.encrypted" -pass file:"$temp_file"
 
         # Optionally delete the plan file.
-        if [[ "$PRESERVE_PLAN" != "true" ]]; then
+        if [[ "$INPUTS_PRESERVE_PLAN" != "true" ]]; then
           rm --force "$path"
         fi
 
@@ -323,7 +323,15 @@ runs:
       env:
         exitcode: ${{ steps.apply.outputs.exit_code || steps.plan.outputs.exit_code || steps.validate.outputs.exit_code || steps.initialize.outputs.exit_code || steps.format.outputs.exit_code }}
         GH_MATRIX: ${{ toJSON(matrix) }}
-        PRESERVE_PLAN: ${{ inputs.preserve-plan }}
+        INPUTS_COMMENT_PR: ${{ inputs.comment-pr }}
+        INPUTS_EXPAND_DIFF: ${{ inputs.expand-diff }}
+        INPUTS_EXPAND_SUMMARY: ${{ inputs.expand-summary }}
+        INPUTS_HIDE_ARGS: ${{ inputs.hide-args }}
+        INPUTS_PRESERVE_PLAN: ${{ inputs.preserve-plan }}
+        INPUTS_SHOW_ARGS: ${{ inputs.show-args }}
+        INPUTS_TAG_ACTOR: ${{ inputs.tag-actor }}
+        INPUTS_COMMENT_METHOD: ${{ inputs.comment-method }}
+        path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       shell: bash
       run: |
         # Post output.
@@ -331,14 +339,14 @@ runs:
         command=$(cat tf.command.txt)
 
         # Remove each comma-delimited "hide-args" argument from the command.
-        IFS=',' read -ra hide_args <<< "${{ inputs.hide-args }}"
+        IFS=',' read -ra hide_args <<< "$INPUTS_HIDE_ARGS"
         for arg in "${hide_args[@]}"; do
           command=$(echo "$command" | grep --invert-match "^ -${arg}" || true)
         done
 
         # Conversely, show each comma-delimited "show-args" argument in the command.
         command_append=""
-        IFS=',' read -ra show_args <<< "${{ inputs.show-args }}"
+        IFS=',' read -ra show_args <<< "$INPUTS_SHOW_ARGS"
         for arg in "${show_args[@]}"; do
           command_append+=$(echo "${{ steps.arg.outputs.arg-workspace }}${{ steps.arg.outputs.arg-backend-config }}${{ steps.arg.outputs.arg-backend }}${{ steps.arg.outputs.arg-backup }}${{ steps.arg.outputs.arg-check }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-destroy }}${{ steps.arg.outputs.arg-detailed-exitcode }}${{ steps.arg.outputs.arg-diff }}${{ steps.arg.outputs.arg-force-copy }}${{ steps.arg.outputs.arg-from-module }}${{ steps.arg.outputs.arg-generate-config-out }}${{ steps.arg.outputs.arg-get }}${{ steps.arg.outputs.arg-list }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-lockfile }}${{ steps.arg.outputs.arg-migrate-state }}${{ steps.arg.outputs.arg-no-tests }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-plugin-dir }}${{ steps.arg.outputs.arg-reconfigure }}${{ steps.arg.outputs.arg-recursive }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-state-out }}${{ steps.arg.outputs.arg-state }}${{ steps.arg.outputs.arg-target }}${{ steps.arg.outputs.arg-test-directory }}${{ steps.arg.outputs.arg-upgrade }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-write }}${{ steps.arg.outputs.arg-auto-approve }}" | sed 's/ -/\n -/g' | grep "^ -${arg}" || true)
         done
@@ -412,7 +420,7 @@ runs:
           echo "diff<<EODIFFTFVIAPR"$'\n'"$diff_truncated"$'\n'EODIFFTFVIAPR >> "$GITHUB_OUTPUT"
 
           diff="
-        <details${{ inputs.expand-diff == 'true' && ' open' || '' }}><summary>Diff of ${diff_count} ${diff_change}.</summary>
+        <details${{ env.INPUTS_EXPAND_DIFF == 'true' && ' open' || '' }}><summary>Diff of ${diff_count} ${diff_change}.</summary>
 
         \`\`\`diff
         ${diff_truncated}
@@ -425,9 +433,9 @@ runs:
         # Set flags for creating PR comment and tagging actor.
         create_comment=""
         tag_actor=""
-        if [[ "${{ inputs.tag-actor }}" == "always" || "${{ inputs.tag-actor }}" == "true" ]]; then
+        if [[ "$INPUTS_TAG_ACTOR" == "always" || "$INPUTS_TAG_ACTOR" == "true" ]]; then
           tag_actor="@"
-        elif [[ ("${{ inputs.tag-actor }}" == "on-diff" || "${{ inputs.tag-actor }}" == "on-change") && "$exitcode" -ne 0 ]]; then
+        elif [[ ("$INPUTS_TAG_ACTOR" == "on-diff" || "$INPUTS_TAG_ACTOR" == "on-change") && "$exitcode" -ne 0 ]]; then
           tag_actor="@"
         fi
 
@@ -440,7 +448,7 @@ runs:
         <!-- placeholder-2 -->
         ${diff}
         <!-- placeholder-3 -->
-        <details${{ inputs.expand-summary == 'true' && ' open' || '' }}><summary>${summary}</br>
+        <details${{ env.INPUTS_EXPAND_SUMMARY == 'true' && ' open' || '' }}><summary>${summary}</br>
 
         <!-- placeholder-4 -->
         ###### By ${tag_actor}${{ github.triggering_actor }} at ${{ github.event.pull_request.updated_at || github.event.comment.created_at || github.event.head_commit.timestamp || github.event.merge_group.head_commit.timestamp }} [(view log)](${run_url}).
@@ -461,8 +469,8 @@ runs:
         echo "comment_body<<EOCOMMENTTFVIAPR"$'\n'"$body"$'\n'EOCOMMENTTFVIAPR >> "$GITHUB_OUTPUT"
 
         # Optionally delete the plan file.
-        if [[ "$PRESERVE_PLAN" != "true" ]]; then
-          rm --force "${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}"
+        if [[ "$INPUTS_PRESERVE_PLAN" != "true" ]]; then
+          rm --force "$path"
         fi
 
         # Clean up files.
@@ -473,27 +481,25 @@ runs:
         bot_comment=$(echo "$list_comments" | jq --raw-output --arg identifier "${{ steps.identifier.outputs.name }}" '.[] | select(.user.type == "Bot") | select(.body | contains($identifier)) | .id' | tail -n 1)
 
         # Determine if a PR comment should be created.
-        if [[ "${{ inputs.comment-pr }}" == "always" && "${{ steps.identifier.outputs.pr }}" -ne 0 ]]; then
+        if [[ "$INPUTS_COMMENT_PR" == "always" && "${{ steps.identifier.outputs.pr }}" -ne 0 ]]; then
           create_comment="true"
-        elif [[ ("${{ inputs.comment-pr }}" == "on-diff" || "${{ inputs.comment-pr }}" == "on-change") && "$exitcode" -ne 0 && "${{ steps.identifier.outputs.pr }}" -ne 0 ]]; then
+        elif [[ ("$INPUTS_COMMENT_PR" == "on-diff" || "$INPUTS_COMMENT_PR" == "on-change") && "$exitcode" -ne 0 && "${{ steps.identifier.outputs.pr }}" -ne 0 ]]; then
           create_comment="true"
-        elif [[ ("${{ inputs.comment-pr }}" == "on-diff" || "${{ inputs.comment-pr }}" == "on-change") && "$exitcode" -eq 0 && -n "$bot_comment" ]]; then
+        elif [[ ("$INPUTS_COMMENT_PR" == "on-diff" || "$INPUTS_COMMENT_PR" == "on-change") && "$exitcode" -eq 0 && -n "$bot_comment" ]]; then
           gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method DELETE
           exit 0
         fi
-
         # Exit early if no comment is needed.
         if [[ "$create_comment" != "true" ]]; then
           exit 0
         fi
-
         # Create PR comment based on configuration and existing comment.
         if [[ -n "$bot_comment" ]]; then
-          if [[ "${{ inputs.comment-method }}" == "update" ]]; then
+          if [[ "$INPUTS_COMMENT_METHOD" == "update" ]]; then
             # Update existing comment.
             pr_comment=$(gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method PATCH --field "body=${body}")
             echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id')" >> "$GITHUB_OUTPUT"
-          elif [[ "${{ inputs.comment-method }}" == "recreate" ]]; then
+          elif [[ "$INPUTS_COMMENT_METHOD" == "recreate" ]]; then
             # Delete previous comment before posting a new one.
             gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method DELETE
             pr_comment=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method POST --field "body=${body}")

@@ -273,20 +273,23 @@ runs:
 
     - if: ${{ inputs.plan-parity == 'true' && (steps.download.outcome == 'success' || inputs.plan-file != '') }}
       env:
+        INPUTS_ARG_CHDIR: ${{ inputs.arg-chdir || inputs.working-directory }}
         INPUTS_PLAN_FILE: ${{ inputs.plan-file }}
+        INPUTS_TOOL: ${{ inputs.tool }}
         path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
+        parity_path: ${{ format('{0}{1}tfplan.parity', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       shell: bash
       run: |
         # TF plan parity.
         # Generate a new plan file, then compare it with the previous one.
         # Both plan files are normalized by sorting JSON keys, removing timestamps and ${{ steps.arg.outputs.arg-detailed-exitcode }} to avoid false-positives.
         if [[ -n "$INPUTS_PLAN_FILE" ]]; then mv --force --verbose "$INPUTS_PLAN_FILE" "$path" 2>/dev/null; fi
-        ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} plan${{ steps.arg.outputs.arg-destroy }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-generate-config-out }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }} -out=tfplan.parity
-        ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} show -json tfplan.parity | jq --sort-keys '[(.resource_changes? // [])[] | select(.change.actions != ["no-op"])]' > tfplan.new
-        ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} show -json tfplan | jq --sort-keys '[(.resource_changes? // [])[] | select(.change.actions != ["no-op"])]' > tfplan.old
+        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} plan${{ steps.arg.outputs.arg-destroy }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-generate-config-out }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }} -out=tfplan.parity
+        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} show -json tfplan.parity | jq --sort-keys '[(.resource_changes? // [])[] | select(.change.actions != ["no-op"])]' > tfplan.new
+        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} show -json tfplan | jq --sort-keys '[(.resource_changes? // [])[] | select(.change.actions != ["no-op"])]' > tfplan.old
         # If both plan files are identical, then replace the old plan file with the new one to prevent avoidable stale apply.
-        diff --brief tfplan.new tfplan.old && mv --force --verbose "${{ format('{0}{1}tfplan.parity', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}" "${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}"
-        rm --force tfplan.new tfplan.old "${{ format('{0}{1}tfplan.parity', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}"
+        diff --brief tfplan.new tfplan.old && mv --force --verbose "$parity_path" "$path"
+        rm --force tfplan.new tfplan.old "$parity_path"
 
     - id: apply
       if: ${{ inputs.command == 'apply' }}

@@ -180,16 +180,17 @@ runs:
     - if: ${{ inputs.command == 'plan' }}
       id: plan
       env:
-        PLAN_FILE: ${{ inputs.plan-file }}
+        INPUTS_PLAN_FILE: ${{ inputs.plan-file }}
+        INPUTS_TOOL: ${{ inputs.tool }}
         path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       shell: bash
       run: |
         # TF plan.
         trap 'exit_code="$?"; echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"; if [[ "$exit_code" == "2" ]]; then exit 0; fi' EXIT
         args="${{ steps.arg.outputs.arg-destroy }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-detailed-exitcode }}${{ steps.arg.outputs.arg-generate-config-out }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }} -out=tfplan"
-        echo "${{ inputs.tool }} plan${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
-        if [[ -n "$PLAN_FILE" ]]; then mv --force --verbose "$PLAN_FILE" "$path" 2>/dev/null && exit 0; fi
-        ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} plan${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
+        echo "$INPUTS_TOOL plan${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
+        if [[ -n "$INPUTS_PLAN_FILE" ]]; then mv --force --verbose "$INPUTS_PLAN_FILE" "$path" 2>/dev/null && exit 0; fi
+        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} plan${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
 
     - if: ${{ inputs.command == 'apply' && inputs.arg-auto-approve != 'true' && inputs.plan-file == '' }}
       id: download
@@ -268,14 +269,14 @@ runs:
 
     - if: ${{ inputs.plan-parity == 'true' && (steps.download.outcome == 'success' || inputs.plan-file != '') }}
       env:
-        PLAN_FILE: ${{ inputs.plan-file }}
+        INPUTS_PLAN_FILE: ${{ inputs.plan-file }}
         path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       shell: bash
       run: |
         # TF plan parity.
         # Generate a new plan file, then compare it with the previous one.
         # Both plan files are normalized by sorting JSON keys, removing timestamps and ${{ steps.arg.outputs.arg-detailed-exitcode }} to avoid false-positives.
-        if [[ -n "$PLAN_FILE" ]]; then mv --force --verbose "$PLAN_FILE" "$path" 2>/dev/null; fi
+        if [[ -n "$INPUTS_PLAN_FILE" ]]; then mv --force --verbose "$INPUTS_PLAN_FILE" "$path" 2>/dev/null; fi
         ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} plan${{ steps.arg.outputs.arg-destroy }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-generate-config-out }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }} -out=tfplan.parity
         ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} show -json tfplan.parity | jq --sort-keys '[(.resource_changes? // [])[] | select(.change.actions != ["no-op"])]' > tfplan.new
         ${{ inputs.tool }}${{ steps.arg.outputs.arg-chdir }} show -json tfplan | jq --sort-keys '[(.resource_changes? // [])[] | select(.change.actions != ["no-op"])]' > tfplan.old
@@ -286,7 +287,7 @@ runs:
     - id: apply
       if: ${{ inputs.command == 'apply' }}
       env:
-        PLAN_FILE: ${{ inputs.plan-file }}
+        INPUTS_PLAN_FILE: ${{ inputs.plan-file }}
         PLAN_PARITY: ${{ inputs.plan-parity }}
         path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       shell: bash
@@ -299,7 +300,7 @@ runs:
           var_file="${{ steps.arg.outputs.arg-var-file }}"
           var="${{ steps.arg.outputs.arg-var }}"
         else
-          if [[ -n "$PLAN_FILE" && "$PLAN_PARITY" != "true" ]]; then mv --force --verbose "$PLAN_FILE" "$path" 2>/dev/null; fi
+          if [[ -n "$INPUTS_PLAN_FILE" && "$PLAN_PARITY" != "true" ]]; then mv --force --verbose "$INPUTS_PLAN_FILE" "$path" 2>/dev/null; fi
           plan=" tfplan"
           var_file=""
           var=""

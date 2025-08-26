@@ -291,8 +291,8 @@ runs:
         diff --brief tfplan.new tfplan.old && mv --force --verbose "$parity_path" "$path"
         rm --force tfplan.new tfplan.old "$parity_path"
 
-    - id: apply
-      if: ${{ inputs.command == 'apply' }}
+    - if: ${{ inputs.command == 'apply' }}
+      id: apply
       env:
         INPUTS_ARG_AUTO_APPROVE: ${{ inputs.arg-auto-approve }}
         INPUTS_PLAN_FILE: ${{ inputs.plan-file }}
@@ -318,8 +318,8 @@ runs:
         echo "$INPUTS_TOOL apply${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
         $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} apply${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
 
-    - id: post
-      if: ${{ !cancelled() && steps.identifier.outcome == 'success' && contains(fromJSON('["plan", "apply", "init"]'), inputs.command) }}
+    - if: ${{ !cancelled() && steps.identifier.outcome == 'success' && contains(fromJSON('["plan", "apply", "init"]'), inputs.command) }}
+      id: post
       env:
         exitcode: ${{ steps.apply.outputs.exit_code || steps.plan.outputs.exit_code || steps.validate.outputs.exit_code || steps.initialize.outputs.exit_code || steps.format.outputs.exit_code }}
         GH_MATRIX: ${{ toJSON(matrix) }}

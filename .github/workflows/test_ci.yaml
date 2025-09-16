@@ -22,14 +22,14 @@ jobs:
       matrix:
         tool:
           - tofu
-          # - terraform
+          - terraform
         test:
           - pass_zero
           - pass_one
-          # - pass_character_limit
-          # - fail_data_source_error
-          # - fail_format_diff
-          # - fail_invalid_resource_type
+          - pass_character_limit
+          - fail_data_source_error
+          - fail_format_diff
+          - fail_invalid_resource_type
 
     steps:
       - name: Echo context
@@ -63,7 +63,7 @@ jobs:
         with:
           working-directory: tests/${{ matrix.test }}
           tool: ${{ matrix.tool }}
-          command: apply # ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
+          command: ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
           arg-lock: ${{ github.event.pull_request.merged }}
           arg-refresh: ${{ github.event.pull_request.merged && 'false' || 'true' }}
           arg-workspace: dev
@@ -76,7 +76,7 @@ jobs:
           preserve-plan: true
           retention-days: 1
 
-          comment-pr: on-diff # ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
+          comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
           hide-args: detailed-exitcode,lock,out,refresh
           tag-actor: never
 

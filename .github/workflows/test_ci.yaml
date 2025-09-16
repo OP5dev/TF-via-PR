@@ -24,7 +24,7 @@ jobs:
           - tofu
           # - terraform
         test:
-          # - pass_zero
+          - pass_zero
           - pass_one
           # - pass_character_limit
           # - fail_data_source_error

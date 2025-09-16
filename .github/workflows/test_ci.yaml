@@ -63,7 +63,7 @@ jobs:
         with:
           working-directory: tests/${{ matrix.test }}
           tool: ${{ matrix.tool }}
-          command: plan # ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
+          command: apply # ${{ github.event.pull_request.merged && 'apply' || 'plan' }}
           arg-lock: ${{ github.event.pull_request.merged }}
           arg-refresh: ${{ github.event.pull_request.merged && 'false' || 'true' }}
           arg-workspace: dev

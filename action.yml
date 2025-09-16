@@ -476,8 +476,7 @@ runs:
         # Clean up files.
         rm --force tf.command.txt tf.console.txt tf.diff.txt
 
-        # The remainder of the code relates to commenting on the PR.
-        # Exit early if we don't have a relevant PR.
+        # Exit early if there is no PR to comment on.
         if [[ "${{ steps.identifier.outputs.pr }}" -eq 0 ]]; then
           exit 0
         fi
@@ -495,10 +494,12 @@ runs:
           gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method DELETE
           exit 0
         fi
+
         # Exit early if no comment is needed.
         if [[ "$create_comment" != "true" ]]; then
           exit 0
         fi
+
         # Create PR comment based on configuration and existing comment.
         if [[ -n "$bot_comment" ]]; then
           if [[ "$INPUTS_COMMENT_METHOD" == "update" ]]; then

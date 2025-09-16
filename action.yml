@@ -323,6 +323,8 @@ runs:
       env:
         exitcode: ${{ steps.apply.outputs.exit_code || steps.plan.outputs.exit_code || steps.validate.outputs.exit_code || steps.initialize.outputs.exit_code || steps.format.outputs.exit_code }}
         GH_MATRIX: ${{ toJSON(matrix) }}
+        INPUTS_COMMAND: ${{ inputs.command }}
+        INPUTS_COMMENT_METHOD: ${{ inputs.comment-method }}
         INPUTS_COMMENT_PR: ${{ inputs.comment-pr }}
         INPUTS_EXPAND_DIFF: ${{ inputs.expand-diff }}
         INPUTS_EXPAND_SUMMARY: ${{ inputs.expand-summary }}
@@ -330,7 +332,6 @@ runs:
         INPUTS_PRESERVE_PLAN: ${{ inputs.preserve-plan }}
         INPUTS_SHOW_ARGS: ${{ inputs.show-args }}
         INPUTS_TAG_ACTOR: ${{ inputs.tag-actor }}
-        INPUTS_COMMENT_METHOD: ${{ inputs.comment-method }}
         path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       shell: bash
       run: |
@@ -490,7 +491,7 @@ runs:
           create_comment="true"
         elif [[ ("$INPUTS_COMMENT_PR" == "on-diff" || "$INPUTS_COMMENT_PR" == "on-change") && "$exitcode" -ne 0 ]]; then
           create_comment="true"
-        elif [[ ("$INPUTS_COMMENT_PR" == "on-diff" || "$INPUTS_COMMENT_PR" == "on-change") && "$exitcode" -eq 0 && -n "$bot_comment" ]]; then
+        elif [[ ("$INPUTS_COMMENT_PR" == "on-diff" || "$INPUTS_COMMENT_PR" == "on-change") && "$exitcode" -eq 0 && "$INPUTS_COMMAND" == "plan" && -n "$bot_comment" ]]; then
           gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method DELETE
           exit 0
         fi

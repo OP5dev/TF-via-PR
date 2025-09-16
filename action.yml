@@ -489,7 +489,7 @@ runs:
         # Determine if a PR comment should be created.
         if [[ "$INPUTS_COMMENT_PR" == "always" ]]; then
           create_comment="true"
-        elif [[ ("$INPUTS_COMMENT_PR" == "on-diff" || "$INPUTS_COMMENT_PR" == "on-change") && "$INPUTS_COMMAND" == "plan" && "$exitcode" -ne 0 ]]; then
+        elif [[ ("$INPUTS_COMMENT_PR" == "on-diff" || "$INPUTS_COMMENT_PR" == "on-change") && "$exitcode" -ne 0 ]]; then
           create_comment="true"
         elif [[ ("$INPUTS_COMMENT_PR" == "on-diff" || "$INPUTS_COMMENT_PR" == "on-change") && "$INPUTS_COMMAND" != "plan" && -n "$bot_comment" ]]; then
           create_comment="true"

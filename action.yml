@@ -432,7 +432,6 @@ runs:
 
         # Set flags for creating PR comment and tagging actor.
         create_comment=""
-        delete_comment=""
         tag_actor=""
         if [[ "$INPUTS_TAG_ACTOR" == "always" || "$INPUTS_TAG_ACTOR" == "true" ]]; then
           tag_actor="@"
@@ -477,40 +476,45 @@ runs:
         # Clean up files.
         rm --force tf.command.txt tf.console.txt tf.diff.txt
 
-        # Determine if a PR comment should be created.
-        if [[ "$INPUTS_COMMENT_PR" == "always" && "${{ steps.identifier.outputs.pr }}" -ne 0 ]]; then
-          create_comment="true"
-        elif [[ ("$INPUTS_COMMENT_PR" == "on-diff" || "$INPUTS_COMMENT_PR" == "on-change") && "$exitcode" -ne 0 && "${{ steps.identifier.outputs.pr }}" -ne 0 ]]; then
-          create_comment="true"
-        elif [[ ("$INPUTS_COMMENT_PR" == "on-diff" || "$INPUTS_COMMENT_PR" == "on-change") && "$exitcode" -eq 0 && "${{ steps.identifier.outputs.pr }}" -ne 0 ]]; then
-          delete_comment="true"
+        # The remainder of the code relates to commenting on the PR.
+        # Exit early if we don't have a relevant PR.
+        if [[ "${{ steps.identifier.outputs.pr }}" -eq 0 ]]; then
+          exit 0
         fi
 
-        if [[ "$create_comment" == "true" || "$delete_comment" == "true" ]]; then
-          # Check if the PR contains a bot comment with the same identifier.
-          # We do this here to avoid attempting to delete/create a comment in a non-existant PR.
-          list_comments=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method GET --paginate)
-          bot_comment=$(echo "$list_comments" | jq --raw-output --arg identifier "${{ steps.identifier.outputs.name }}" '.[] | select(.user.type == "Bot") | select(.body | contains($identifier)) | .id' | tail -n 1)
+        # Check if the PR contains a bot comment with the same identifier.
+        list_comments=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method GET --paginate)
+        bot_comment=$(echo "$list_comments" | jq --raw-output --arg identifier "${{ steps.identifier.outputs.name }}" '.[] | select(.user.type == "Bot") | select(.body | contains($identifier)) | .id' | tail -n 1)
 
-          # Either delete, update or create a new comment.
-          if [[ "$delete_comment" == "true" && -n "$bot_comment" ]]; then
+        # Determine if a PR comment should be created.
+        if [[ "$INPUTS_COMMENT_PR" == "always" ]]; then
+          create_comment="true"
+        elif [[ ("$INPUTS_COMMENT_PR" == "on-diff" || "$INPUTS_COMMENT_PR" == "on-change") && "$exitcode" -ne 0 ]]; then
+          create_comment="true"
+        elif [[ ("$INPUTS_COMMENT_PR" == "on-diff" || "$INPUTS_COMMENT_PR" == "on-change") && "$exitcode" -eq 0 && -n "$bot_comment" ]]; then
+          gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method DELETE
+          exit 0
+        fi
+        # Exit early if no comment is needed.
+        if [[ "$create_comment" != "true" ]]; then
+          exit 0
+        fi
+        # Create PR comment based on configuration and existing comment.
+        if [[ -n "$bot_comment" ]]; then
+          if [[ "$INPUTS_COMMENT_METHOD" == "update" ]]; then
+            # Update existing comment.
+            pr_comment=$(gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method PATCH --field "body=${body}")
+            echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id')" >> "$GITHUB_OUTPUT"
+          elif [[ "$INPUTS_COMMENT_METHOD" == "recreate" ]]; then
+            # Delete previous comment before posting a new one.
             gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method DELETE
-          elif [[ "$create_comment" == "true" && -n "$bot_comment" ]]; then
-            if [[ "$INPUTS_COMMENT_METHOD" == "update" ]]; then
-              # Update existing comment.
-              pr_comment=$(gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method PATCH --field "body=${body}")
-              echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id')" >> "$GITHUB_OUTPUT"
-            elif [[ "$INPUTS_COMMENT_METHOD" == "recreate" ]]; then
-              # Delete previous comment before posting a new one.
-              gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method DELETE
-              pr_comment=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method POST --field "body=${body}")
-              echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id')" >> "$GITHUB_OUTPUT"
-            fi
-          elif [[ "$create_comment" == "true" ]]; then
-            # Post new comment.
             pr_comment=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method POST --field "body=${body}")
             echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id')" >> "$GITHUB_OUTPUT"
           fi
+        else
+          # Post new comment.
+          pr_comment=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method POST --field "body=${body}")
+          echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id')" >> "$GITHUB_OUTPUT"
         fi
 
 outputs:

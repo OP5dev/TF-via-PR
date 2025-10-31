@@ -355,7 +355,7 @@ runs:
           $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} show -json tfplan.parity | jq --sort-keys '[(.resource_changes? // [])[] | select(.change.actions != ["no-op"])]' > tfplan.new
           $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} show -json tfplan | jq --sort-keys '[(.resource_changes? // [])[] | select(.change.actions != ["no-op"])]' > tfplan.old
         fi
-        # If both plan files are identical, then replace the old plan file with the new one to prevent avoidable stale        .
+        # If both plan files are identical, then replace the old plan file with the new one to prevent avoidable stale plans from being applied.
         diff --brief tfplan.new tfplan.old && mv --force --verbose "$parity_path" "$path"
         rm --force tfplan.new tfplan.old "$parity_path"
 

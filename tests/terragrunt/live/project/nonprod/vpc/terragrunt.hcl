@@ -55,7 +55,7 @@ inputs = {
   flow_log_max_aggregation_interval     = 60
 
   # VPC Flow Logs destination
-  flow_log_destination_type = "cloud-watch-logs"
+  flow_log_destination_type = "cloud-watch-log-group"
 
   public_subnet_tags = {
     Type = "public"

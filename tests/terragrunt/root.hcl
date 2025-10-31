@@ -6,7 +6,6 @@ locals {
   common = read_terragrunt_config(find_in_parent_folders("_envcommon/common.hcl"))
   environment = read_terragrunt_config(find_in_parent_folders("environment.hcl")).locals
 
- 
 
   # Backend configuration - consistent naming pattern
   backend_config = {

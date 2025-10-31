@@ -49,7 +49,7 @@ tests/terragrunt/
 ## Prerequisites
 
 1. **Terragrunt**: Install Terragrunt (v0.48+ recommended, v0.54+ also supported)
-2. **AWS CLI**: Configured with access to `tcx-aws-ice-test` account
+2. **AWS CLI**: Configured with access to the `nonprod` AWS account (ID: 155524221786)
 3. **Terraform**: v1.5+ (will be downloaded automatically by Terragrunt)
 
 ## Quick Verification

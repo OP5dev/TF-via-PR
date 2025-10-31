@@ -761,8 +761,8 @@ inputs:
     description: "backend"
     required: false
   arg-backend-bootstrap:
-    default: "true"
-    description: "Enable backend bootstrap for Terragrunt (adds --backend-bootstrap). Set to 'false' to disable."
+    default: ""
+    description: "Enable backend bootstrap for Terragrunt (adds --backend-bootstrap). Set to 'true' to enable."
     required: false
   arg-backup:
     default: ""

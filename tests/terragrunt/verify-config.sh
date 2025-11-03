@@ -46,14 +46,17 @@ check_hcl_syntax() {
     local dir="$(dirname "$file")"
     
     # Skip validation for root-level files that don't have terragrunt.hcl
-    if [ "$file" = "root.hcl" ] || [ "$file" = "accounts.hcl" ] || [ "$file" = "_envcommon/common.hcl" ] || [ "$file" = "_envcommon/providers/aws.hcl" ] || [ "$file" = "live/project/nonprod/environment.hcl" ] || [ "$file" = "live/project/prod/environment.hcl" ]; then
-        # For these files, just check basic HCL syntax
-        if grep -q "locals\|inputs\|remote_state\|provider" "$file" 2>/dev/null; then
-            return 0
-        else
-            return 1
+    local skip_files=("root.hcl" "accounts.hcl" "_envcommon/common.hcl" "_envcommon/providers/aws.hcl" "live/project/nonprod/environment.hcl" "live/project/prod/environment.hcl")
+    for skip_file in "${skip_files[@]}"; do
+        if [ "$file" = "$skip_file" ]; then
+            # For these files, just check basic HCL syntax
+            if grep -q "locals\|inputs\|remote_state\|provider" "$file" 2>/dev/null; then
+                return 0
+            else
+                return 1
+            fi
         fi
-    fi
+    done
     
     # For terragrunt.hcl files, use terragrunt validation
     if command_exists terragrunt && [ -f "$dir/terragrunt.hcl" ]; then

@@ -82,7 +82,7 @@ runs:
         echo arg-check=$([[ -n "$INPUTS_ARG_CHECK" ]] && echo " -check" || echo "") >> "$GITHUB_OUTPUT"
         echo arg-compact-warnings=$([[ -n "$INPUTS_ARG_COMPACT_WARNINGS" ]] && echo " -compact-warnings" || echo "") >> "$GITHUB_OUTPUT"
         echo arg-concise=$([[ -n "$INPUTS_ARG_CONCISE" ]] && echo " -concise" || echo "") >> "$GITHUB_OUTPUT"
-        echo arg-destroy=$([[ -n "$INPUTS_ARG_DESTROY" ]] && echo " -destroy" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-destroy=$([[ "${INPUTS_ARG_DESTROY,,}" == "true" ]] && echo " -destroy" || echo "") >> "$GITHUB_OUTPUT"
         echo arg-detailed-exitcode=$([[ -n "$INPUTS_ARG_DETAILED_EXITCODE" ]] && echo " -detailed-exitcode" || echo "") >> "$GITHUB_OUTPUT"
         echo arg-diff=$([[ -n "$INPUTS_ARG_DIFF" ]] && echo " -diff" || echo "") >> "$GITHUB_OUTPUT"
         echo arg-force-copy=$([[ -n "$INPUTS_ARG_FORCE_COPY" ]] && echo " -force-copy" || echo "") >> "$GITHUB_OUTPUT"

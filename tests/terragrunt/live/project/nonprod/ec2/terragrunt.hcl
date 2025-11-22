@@ -22,13 +22,13 @@ include "aws_provider" {
 # Dependency on VPC
 dependency "vpc" {
   config_path = find_in_parent_folders("vpc")
-  
+
   mock_outputs = {
-    vpc_id         = "vpc-mock"
+    vpc_id          = "vpc-mock"
     private_subnets = ["subnet-mock1", "subnet-mock2"]
     public_subnets  = ["subnet-mock3", "subnet-mock4"]
   }
-  
+
   mock_outputs_allowed_terraform_commands = ["validate", "plan", "validate-inputs"]
 }
 
@@ -53,11 +53,11 @@ inputs = {
   instance_count = 1
 
   # ami                   = "ami-0c02fb55956c7d316" # Amazon Linux 2 AMI (us-west-1)
-  instance_type         = "t2.micro"
+  instance_type = "t2.micro"
 
-  monitoring            = true
-  subnet_id             = dependency.vpc.outputs.private_subnets[0]
-  
+  monitoring = true
+  subnet_id  = dependency.vpc.outputs.private_subnets[0]
+
   # Let the EC2 module create its own security group
   create_security_group = true
 

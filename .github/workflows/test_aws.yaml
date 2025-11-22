@@ -4,7 +4,7 @@ name: Test AWS
 on:
   pull_request: # Plan.
     paths: [tests/aws/**, .github/workflows/test_aws.yaml]
-    types: [opened, synchronize, reopened, labeled]
+    types: [opened, synchronize, reopened]
   merge_group: # Apply.
     types: [checks_requested]
 
@@ -13,7 +13,6 @@ jobs:
     runs-on: ubuntu-24.04
 
     permissions:
-      issues: write # Required to add PR label.
       pull-requests: write # Required to add PR comment.
 
     outputs:
@@ -31,8 +30,6 @@ jobs:
             PR_NUMBER=$(echo "${{ github.ref_name }}" | sed -n 's/.*pr-\([0-9]*\)-.*/\1/p')
             echo "View PR [#${PR_NUMBER}](https://github.com/${{ github.repository }}/pull/${PR_NUMBER}) to review planned proposal." >> $GITHUB_STEP_SUMMARY
           fi
-          # Remove "tf-plan" PR label if it exists.
-          if [[ "${{ github.event.action }}" == "labeled" ]]; then gh api /repos/${{ github.repository }}/issues/${PR_NUMBER}/labels/tf-plan --method DELETE --silent; fi
           # Output changed targets.
           changed=$(gh api /repos/${{ github.repository }}/pulls/${PR_NUMBER}/files --paginate --jq '.[].filename')
           echo "targets=$(echo "$changed" | jq -R 'select(test("^tests/aws/targets/")) | split("/")[3]' | jq -c -s 'unique | sort')" >> $GITHUB_OUTPUT

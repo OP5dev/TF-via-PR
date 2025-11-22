@@ -67,7 +67,7 @@ jobs:
           arg-lock: ${{ github.event.pull_request.merged }}
           arg-refresh: ${{ github.event.pull_request.merged && 'false' || 'true' }}
           arg-workspace: dev
-          arg-destroy: false
+          arg-destroy: true
 
           format: true
           validate: true

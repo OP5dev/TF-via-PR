@@ -103,6 +103,9 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
 
       - name: Setup Terragrunt
+        uses: gruntwork-io/terragrunt-action@95fc057922e3c3d4cc021a81a213f088f333ddef # v3.0.2
+
+      - name: Setup Terragrunt
         run: |
           wget https://github.com/gruntwork-io/terragrunt/releases/download/v${{ env.TG_VERSION }}/terragrunt_linux_amd64
           chmod +x terragrunt_linux_amd64
@@ -117,6 +120,7 @@ jobs:
         id: tg
         uses: ./
         with:
+          pr-number: 514
           working-directory: tests/terragrunt/live/project/${{ matrix.target }}
           tool: terragrunt
           command: ${{ github.event_name == 'merge_group' && 'apply' || (github.event_name == 'workflow_dispatch' && github.event.inputs.command || 'plan') }}

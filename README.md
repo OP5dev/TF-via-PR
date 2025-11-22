@@ -321,7 +321,8 @@ View [all notable changes](https://github.com/op5dev/tf-via-pr/releases "Release
 ### To-Do
 
 - Handling of inputs which contain space(s) (e.g., `working-directory: path to/directory`).
-- Handling of comma-separated inputs which contain comma(s) (e.g., `arg-var: token=1,2,3`)—use `TF_CLI_ARGS` [workaround](https://developer.hashicorp.com/terraform/cli/config/environment-variables#tf_cli_args-and-tf_cli_args_name).
+- Handling of comma-separated inputs which contain comma(s) (e.g., `arg-var: token=1,2,3`); workaround with `TF_CLI_ARGS` [environment variable](https://developer.hashicorp.com/terraform/cli/config/environment-variables#tf_cli_args-and-tf_cli_args_name).
+- Handling of interim build artifacts between `plan` and `apply` commands (e.g., zip archive); workaround with `arg-auto-approve: true` during `apply` to rebuild artifacts for provisioning.
 
 </br>
 

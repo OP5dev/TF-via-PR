@@ -8,6 +8,6 @@ locals {
 
   # Environment-specific bucket suffixes
   bucket_suffixes = {
-    nonprod    = "nonprod"
+    nonprod = "nonprod"
   }
 }

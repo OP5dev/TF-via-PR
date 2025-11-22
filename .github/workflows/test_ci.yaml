@@ -22,14 +22,14 @@ jobs:
       matrix:
         tool:
           - tofu
-          # - terraform
+          - terraform
         test:
-          # - pass_zero
+          - pass_zero
           - pass_one
-          # - pass_character_limit
-          # - fail_data_source_error
-          # - fail_format_diff
-          # - fail_invalid_resource_type
+          - pass_character_limit
+          - fail_data_source_error
+          - fail_format_diff
+          - fail_invalid_resource_type
 
     steps:
       - name: Echo context
@@ -67,7 +67,6 @@ jobs:
           arg-lock: ${{ github.event.pull_request.merged }}
           arg-refresh: ${{ github.event.pull_request.merged && 'false' || 'true' }}
           arg-workspace: dev
-          arg-destroy: true
 
           format: true
           validate: true

@@ -1,7 +1,7 @@
 ---
-name: Terraform/OpenTofu via Pull Request
+name: Terraform/OpenTofu/Terragrunt via Pull Request
 author: Rishav Dhar (@rdhar)
-description: Plan and apply Terraform/OpenTofu via PR automation, using best practices for secure and scalable IaC workflows.
+description: Plan and apply Terraform/OpenTofu/Terragrunt via PR automation, using best practices for secure and scalable IaC workflows.
 
 runs:
   using: composite
@@ -17,7 +17,7 @@ runs:
         which jq > /dev/null 2>&1 || { echo "Please install jq before running this action as it is required for processing JSON outputs."; exit 1; }
         which md5sum > /dev/null 2>&1 || { echo "Please install md5sum before running this action as it is required for naming the plan file artifact uniquely."; exit 1; }
         which unzip > /dev/null 2>&1 || { echo "Please install unzip before running this action as it is required for unpacking the plan file artifact."; exit 1; }
-        which $INPUTS_TOOL > /dev/null 2>&1 || { echo "Please install $INPUTS_TOOL before running this action as it is required for provisioning TF code."; exit 1; }
+        which $INPUTS_TOOL > /dev/null 2>&1 || { echo "Please install $INPUTS_TOOL before running this action as it is required for provisioning infrastructure code."; exit 1; }
         if [[ "$INPUTS_PLAN_ENCRYPT" ]]; then which openssl > /dev/null 2>&1 || { echo "Please install openssl before running this action as it is required for plan file encryption."; exit 1; }; fi
         if [[ "$INPUTS_PLAN_PARITY" ]]; then which diff > /dev/null 2>&1 || { echo "Please install diff before running this action as it is required for comparing plan file parity."; exit 1; }; fi
 
@@ -59,6 +59,7 @@ runs:
         INPUTS_ARG_VAR_FILE: ${{ inputs.arg-var-file }}
         INPUTS_ARG_VAR: ${{ inputs.arg-var }}
         INPUTS_ARG_WRITE: ${{ inputs.arg-write }}
+        INPUTS_ARG_BACKEND_BOOTSTRAP: ${{ inputs.arg-backend-bootstrap }}
         INPUTS_TOKEN: ${{ inputs.token }}
         TF_WORKSPACE: ${{ env.TF_WORKSPACE || inputs.arg-workspace }}
       shell: bash
@@ -71,6 +72,7 @@ runs:
         echo "TF_IN_AUTOMATION=true" >> "$GITHUB_ENV"
         echo "TF_INPUT=false" >> "$GITHUB_ENV"
         echo "TF_WORKSPACE=$TF_WORKSPACE" >> "$GITHUB_ENV"
+        echo "TG_NON_INTERACTIVE=true" >> "$GITHUB_ENV"
         echo "GH_HOST=$(echo $GITHUB_SERVER_URL | sed 's/.*:\/\///')" >> "$GITHUB_ENV"
 
         # CLI arguments.
@@ -111,6 +113,7 @@ runs:
         echo arg-var=$([[ -n "$INPUTS_ARG_VAR" ]] && echo " -var=$INPUTS_ARG_VAR" | sed "s/,/ -var=/g" || echo "") >> "$GITHUB_OUTPUT"
         echo arg-write=$([[ -n "$INPUTS_ARG_WRITE" ]] && echo " -write=$INPUTS_ARG_WRITE" || echo "") >> "$GITHUB_OUTPUT"
         echo arg-workspace=$([[ -n "$TF_WORKSPACE" ]] && echo " -workspace=$TF_WORKSPACE" || echo "") >> "$GITHUB_OUTPUT"
+        echo arg-backend-bootstrap=$([[ -n "$INPUTS_ARG_BACKEND_BOOTSTRAP" ]] && echo " --backend-bootstrap" || echo "") >> "$GITHUB_OUTPUT"
 
     - id: identifier
       env:
@@ -137,9 +140,9 @@ runs:
         echo "pr=${pr_number:-0}" >> "$GITHUB_OUTPUT"
 
         # Generate identifier for the workflow run using MD5 hashing algorithm for concise and unique naming.
-        identifier="${{ steps.arg.outputs.arg-chdir }}${{ steps.arg.outputs.arg-workspace }}${{ steps.arg.outputs.arg-backend-config }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }}${{ steps.arg.outputs.arg-destroy }}"
+        identifier="${{ inputs.arg-chdir || inputs.working-directory }}${{ steps.arg.outputs.arg-workspace }}${{ steps.arg.outputs.arg-backend-config }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }}${{ steps.arg.outputs.arg-destroy }}"
         identifier=$(echo -n "$identifier" | md5sum | awk '{print $1}')
-        echo "name=${INPUTS_TOOL}-${pr_number}-${identifier}.tfplan" >> "$GITHUB_OUTPUT"
+        echo "name=${INPUTS_TOOL}-${pr_number}-${identifier}.plan" >> "$GITHUB_OUTPUT"
 
     - if: ${{ inputs.format == 'true' }}
       id: format
@@ -147,11 +150,21 @@ runs:
         INPUTS_TOOL: ${{ inputs.tool }}
       shell: bash
       run: |
-        # TF format.
+        # Infrastructure format.
         trap 'exit_code="$?"; echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"' EXIT
-        args="${{ steps.arg.outputs.arg-check }}${{ steps.arg.outputs.arg-diff }}${{ steps.arg.outputs.arg-list }}${{ steps.arg.outputs.arg-recursive }}${{ steps.arg.outputs.arg-write }}"
-        echo "$INPUTS_TOOL fmt${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
-        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} fmt${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
+        if [[ "$INPUTS_TOOL" == "terragrunt" ]]; then
+          # Terragrunt doesn't use -chdir, it changes directory first
+          if [[ -n "${{ inputs.arg-chdir || inputs.working-directory }}" ]]; then
+            cd "${{ inputs.arg-chdir || inputs.working-directory }}"
+          fi
+          args="${{ steps.arg.outputs.arg-check }}${{ steps.arg.outputs.arg-diff }}${{ steps.arg.outputs.arg-list }}${{ steps.arg.outputs.arg-recursive }}${{ steps.arg.outputs.arg-write }}"
+          echo "$INPUTS_TOOL fmt${args}" | sed 's/ -/\n -/g' | sed 's/ --/\n --/g' > tf.command.txt
+          $INPUTS_TOOL fmt${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
+        else
+          args="${{ steps.arg.outputs.arg-check }}${{ steps.arg.outputs.arg-diff }}${{ steps.arg.outputs.arg-list }}${{ steps.arg.outputs.arg-recursive }}${{ steps.arg.outputs.arg-write }}"
+          echo "$INPUTS_TOOL fmt${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' | sed 's/ --/\n --/g' > tf.command.txt
+          $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} fmt${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
+        fi
 
     - if: ${{ contains(fromJSON('["plan", "apply", "init"]'), inputs.command) }}
       id: initialize
@@ -161,9 +174,19 @@ runs:
       run: |
         # TF initialize.
         trap 'exit_code="$?"; echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"' EXIT
-        args="${{ steps.arg.outputs.arg-backend-config }}${{ steps.arg.outputs.arg-backend }}${{ env.INPUTS_TOOL == 'tofu' && steps.arg.outputs.arg-var-file || '' }}${{ env.INPUTS_TOOL == 'tofu' && steps.arg.outputs.arg-var || '' }}${{ steps.arg.outputs.arg-force-copy }}${{ steps.arg.outputs.arg-from-module }}${{ steps.arg.outputs.arg-get }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-lockfile }}${{ steps.arg.outputs.arg-migrate-state }}${{ steps.arg.outputs.arg-plugin-dir }}${{ steps.arg.outputs.arg-reconfigure }}${{ steps.arg.outputs.arg-test-directory }}${{ steps.arg.outputs.arg-upgrade }}"
-        echo "$INPUTS_TOOL init${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
-        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} init${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
+        if [[ "$INPUTS_TOOL" == "terragrunt" ]]; then
+          # Terragrunt doesn't use -chdir, it changes directory first
+          if [[ -n "${{ inputs.arg-chdir || inputs.working-directory }}" ]]; then
+            cd "${{ inputs.arg-chdir || inputs.working-directory }}"
+          fi
+          args="${{ steps.arg.outputs.arg-backend-config }}${{ steps.arg.outputs.arg-backend }}${{ steps.arg.outputs.arg-backend-bootstrap }}${{ steps.arg.outputs.arg-force-copy }}${{ steps.arg.outputs.arg-from-module }}${{ steps.arg.outputs.arg-get }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-lockfile }}${{ steps.arg.outputs.arg-migrate-state }}${{ steps.arg.outputs.arg-plugin-dir }}${{ steps.arg.outputs.arg-reconfigure }}${{ steps.arg.outputs.arg-test-directory }}${{ steps.arg.outputs.arg-upgrade }}"
+          echo "$INPUTS_TOOL init${args}" | sed 's/ --/\n --/g' | sed 's/ -/\n -/g' > tf.command.txt
+          $INPUTS_TOOL init${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
+        else
+          args="${{ steps.arg.outputs.arg-backend-config }}${{ steps.arg.outputs.arg-backend }}${{ env.INPUTS_TOOL == 'tofu' && steps.arg.outputs.arg-var-file || '' }}${{ env.INPUTS_TOOL == 'tofu' && steps.arg.outputs.arg-var || '' }}${{ steps.arg.outputs.arg-force-copy }}${{ steps.arg.outputs.arg-from-module }}${{ steps.arg.outputs.arg-get }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-lockfile }}${{ steps.arg.outputs.arg-migrate-state }}${{ steps.arg.outputs.arg-plugin-dir }}${{ steps.arg.outputs.arg-reconfigure }}${{ steps.arg.outputs.arg-test-directory }}${{ steps.arg.outputs.arg-upgrade }}"
+          echo "$INPUTS_TOOL init${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' | sed 's/ --/\n --/g' > tf.command.txt
+          $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} init${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
+        fi
 
     - if: ${{ inputs.validate == 'true' && contains(fromJSON('["plan", "apply", "init"]'), inputs.command) }}
       id: validate
@@ -171,11 +194,21 @@ runs:
         INPUTS_TOOL: ${{ inputs.tool }}
       shell: bash
       run: |
-        # TF validate.
+        # Infrastructure validate.
         trap 'exit_code="$?"; echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"' EXIT
-        args="${{ env.INPUTS_TOOL == 'tofu' && steps.arg.outputs.arg-var-file || '' }}${{ env.INPUTS_TOOL == 'tofu' && steps.arg.outputs.arg-var || '' }}${{ steps.arg.outputs.arg-no-tests }}${{ steps.arg.outputs.arg-test-directory }}"
-        echo "$INPUTS_TOOL validate${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
-        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} validate${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
+        if [[ "$INPUTS_TOOL" == "terragrunt" ]]; then
+          # Terragrunt doesn't use -chdir, it changes directory first
+          if [[ -n "${{ inputs.arg-chdir || inputs.working-directory }}" ]]; then
+            cd "${{ inputs.arg-chdir || inputs.working-directory }}"
+          fi
+          args="${{ steps.arg.outputs.arg-no-tests }}${{ steps.arg.outputs.arg-test-directory }}"
+          echo "$INPUTS_TOOL validate${args}" | sed 's/ -/\n -/g' | sed 's/ --/\n --/g' > tf.command.txt
+          $INPUTS_TOOL validate${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
+        else
+          args="${{ env.INPUTS_TOOL == 'tofu' && steps.arg.outputs.arg-var-file || '' }}${{ env.INPUTS_TOOL == 'tofu' && steps.arg.outputs.arg-var || '' }}${{ steps.arg.outputs.arg-no-tests }}${{ steps.arg.outputs.arg-test-directory }}"
+          echo "$INPUTS_TOOL validate${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' | sed 's/ --/\n --/g' > tf.command.txt
+          $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} validate${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
+        fi
 
     - if: ${{ inputs.command == 'plan' }}
       id: plan
@@ -185,17 +218,29 @@ runs:
         path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       shell: bash
       run: |
-        # TF plan.
+        # Infrastructure plan.
         trap 'exit_code="$?"; echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"; if [[ "$exit_code" == "2" ]]; then exit 0; fi' EXIT
-        args="${{ steps.arg.outputs.arg-destroy }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-detailed-exitcode }}${{ steps.arg.outputs.arg-generate-config-out }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }} -out=tfplan"
-        echo "$INPUTS_TOOL plan${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
-        if [[ -n "$INPUTS_PLAN_FILE" ]]; then mv --force --verbose "$INPUTS_PLAN_FILE" "$path" 2>/dev/null && exit 0; fi
-        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} plan${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
+        if [[ "$INPUTS_TOOL" == "terragrunt" ]]; then
+          # Terragrunt doesn't use -chdir, it changes directory first
+          if [[ -n "${{ inputs.arg-chdir || inputs.working-directory }}" ]]; then
+            cd "${{ inputs.arg-chdir || inputs.working-directory }}"
+          fi
+          args="${{ steps.arg.outputs.arg-destroy }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-detailed-exitcode }}${{ steps.arg.outputs.arg-generate-config-out }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }} -out=tfplan"
+          echo "$INPUTS_TOOL plan${args}" | sed 's/ -/\n -/g' | sed 's/ --/\n --/g' > tf.command.txt
+          if [[ -n "$INPUTS_PLAN_FILE" ]]; then mv --force --verbose "$INPUTS_PLAN_FILE" "$path" 2>/dev/null && exit 0; fi
+          $INPUTS_TOOL plan${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
+        else
+          args="${{ steps.arg.outputs.arg-destroy }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-detailed-exitcode }}${{ steps.arg.outputs.arg-generate-config-out }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }} -out=tfplan"
+          echo "$INPUTS_TOOL plan${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' | sed 's/ --/\n --/g' > tf.command.txt
+          if [[ -n "$INPUTS_PLAN_FILE" ]]; then mv --force --verbose "$INPUTS_PLAN_FILE" "$path" 2>/dev/null && exit 0; fi
+          $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} plan${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
+        fi
 
     - if: ${{ inputs.command == 'apply' && inputs.arg-auto-approve != 'true' && inputs.plan-file == '' }}
       id: download
       env:
         INPUTS_ARG_CHDIR: ${{ inputs.arg-chdir || inputs.working-directory }}
+        INPUTS_TOOL: ${{ inputs.tool }}
       shell: bash
       run: |
         # Download plan file.
@@ -205,7 +250,12 @@ runs:
         gh api /repos/${{ github.repository }}/actions/artifacts/${artifact_id}/zip --header "$GH_API" --method GET > "${{ steps.identifier.outputs.name }}.zip"
 
         # Unzip the plan file to the working directory, then clean up the zip file.
-        unzip "${{ steps.identifier.outputs.name }}.zip" -d "$INPUTS_ARG_CHDIR"
+        if [[ "$INPUTS_TOOL" == "terragrunt" ]]; then
+          # For Terragrunt, unzip to the current directory since we'll cd into the working directory
+          unzip "${{ steps.identifier.outputs.name }}.zip"
+        else
+          unzip "${{ steps.identifier.outputs.name }}.zip" -d "$INPUTS_ARG_CHDIR"
+        fi
         rm --force "${{ steps.identifier.outputs.name }}.zip"
 
     - if: ${{ inputs.plan-encrypt != '' && steps.download.outcome == 'success' }}
@@ -226,7 +276,15 @@ runs:
       shell: bash
       run: |
         # TF show.
-        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} show tfplan > tf.console.txt
+        if [[ "$INPUTS_TOOL" == "terragrunt" ]]; then
+          # Terragrunt doesn't use -chdir, it changes directory first
+          if [[ -n "${{ inputs.arg-chdir || inputs.working-directory }}" ]]; then
+            cd "${{ inputs.arg-chdir || inputs.working-directory }}"
+          fi
+          $INPUTS_TOOL show tfplan > tf.console.txt
+        else
+          $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} show tfplan > tf.console.txt
+        fi
 
         # Diff of changes.
         # Filter lines starting with "  # " and save to tf.diff.txt, then prepend diff-specific symbols based on specific keywords.
@@ -280,14 +338,24 @@ runs:
         path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       shell: bash
       run: |
-        # TF plan parity.
+        # Infrastructure plan parity.
         # Generate a new plan file, then compare it with the previous one.
         # Both plan files are normalized by sorting JSON keys, removing timestamps and ${{ steps.arg.outputs.arg-detailed-exitcode }} to avoid false-positives.
         if [[ -n "$INPUTS_PLAN_FILE" ]]; then mv --force --verbose "$INPUTS_PLAN_FILE" "$path" 2>/dev/null; fi
-        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} plan${{ steps.arg.outputs.arg-destroy }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-generate-config-out }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }} -out=tfplan.parity
-        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} show -json tfplan.parity | jq --sort-keys '[(.resource_changes? // [])[] | select(.change.actions != ["no-op"])]' > tfplan.new
-        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} show -json tfplan | jq --sort-keys '[(.resource_changes? // [])[] | select(.change.actions != ["no-op"])]' > tfplan.old
-        # If both plan files are identical, then replace the old plan file with the new one to prevent avoidable stale apply.
+        if [[ "$INPUTS_TOOL" == "terragrunt" ]]; then
+          # Terragrunt doesn't use -chdir, it changes directory first
+          if [[ -n "${{ inputs.arg-chdir || inputs.working-directory }}" ]]; then
+            cd "${{ inputs.arg-chdir || inputs.working-directory }}"
+          fi
+          $INPUTS_TOOL plan${{ steps.arg.outputs.arg-destroy }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-generate-config-out }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }} -out=tfplan.parity
+          $INPUTS_TOOL show -json tfplan.parity | jq --sort-keys '[(.resource_changes? // [])[] | select(.change.actions != ["no-op"])]' > tfplan.new
+          $INPUTS_TOOL show -json tfplan | jq --sort-keys '[(.resource_changes? // [])[] | select(.change.actions != ["no-op"])]' > tfplan.old
+        else
+          $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} plan${{ steps.arg.outputs.arg-destroy }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-generate-config-out }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }} -out=tfplan.parity
+          $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} show -json tfplan.parity | jq --sort-keys '[(.resource_changes? // [])[] | select(.change.actions != ["no-op"])]' > tfplan.new
+          $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} show -json tfplan | jq --sort-keys '[(.resource_changes? // [])[] | select(.change.actions != ["no-op"])]' > tfplan.old
+        fi
+        # If both plan files are identical, then replace the old plan file with the new one to prevent avoidable stale plans from being applied.
         diff --brief tfplan.new tfplan.old && mv --force --verbose "$parity_path" "$path"
         rm --force tfplan.new tfplan.old "$parity_path"
 
@@ -301,22 +369,43 @@ runs:
         path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       shell: bash
       run: |
-        # TF apply.
+        # Infrastructure apply.
         trap 'exit_code="$?"; echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"' EXIT
-        # If arg-auto-approve is true, then pass in variables, otherwise pass in the plan file without variables.
-        if [[ "$INPUTS_ARG_AUTO_APPROVE" == "true" ]]; then
-          plan="${{ steps.arg.outputs.arg-auto-approve }}"
-          var_file="${{ steps.arg.outputs.arg-var-file }}"
-          var="${{ steps.arg.outputs.arg-var }}"
+        if [[ "$INPUTS_TOOL" == "terragrunt" ]]; then
+          # Terragrunt doesn't use -chdir, it changes directory first
+          if [[ -n "${{ inputs.arg-chdir || inputs.working-directory }}" ]]; then
+            cd "${{ inputs.arg-chdir || inputs.working-directory }}"
+          fi
+          # If arg-auto-approve is true, then pass in variables, otherwise pass in the plan file without variables.
+          if [[ "$INPUTS_ARG_AUTO_APPROVE" == "true" ]]; then
+            plan="${{ steps.arg.outputs.arg-auto-approve }}"
+            var_file="${{ steps.arg.outputs.arg-var-file }}"
+            var="${{ steps.arg.outputs.arg-var }}"
+          else
+            if [[ -n "$INPUTS_PLAN_FILE" && "$INPUTS_PLAN_PARITY" != "true" ]]; then mv --force --verbose "$INPUTS_PLAN_FILE" "$path" 2>/dev/null; fi
+            plan=" tfplan"
+            var_file=""
+            var=""
+          fi
+          args="${{ steps.arg.outputs.arg-destroy }}${var_file}${var}${{ steps.arg.outputs.arg-backup }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-state-out }}${{ steps.arg.outputs.arg-state }}${{ steps.arg.outputs.arg-target }}${plan}"
+          echo "$INPUTS_TOOL apply${args}" | sed 's/ -/\n -/g' | sed 's/ --/\n --/g' > tf.command.txt
+          $INPUTS_TOOL apply${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
         else
-          if [[ -n "$INPUTS_PLAN_FILE" && "$INPUTS_PLAN_PARITY" != "true" ]]; then mv --force --verbose "$INPUTS_PLAN_FILE" "$path" 2>/dev/null; fi
-          plan=" tfplan"
-          var_file=""
-          var=""
+          # If arg-auto-approve is true, then pass in variables, otherwise pass in the plan file without variables.
+          if [[ "$INPUTS_ARG_AUTO_APPROVE" == "true" ]]; then
+            plan="${{ steps.arg.outputs.arg-auto-approve }}"
+            var_file="${{ steps.arg.outputs.arg-var-file }}"
+            var="${{ steps.arg.outputs.arg-var }}"
+          else
+            if [[ -n "$INPUTS_PLAN_FILE" && "$INPUTS_PLAN_PARITY" != "true" ]]; then mv --force --verbose "$INPUTS_PLAN_FILE" "$path" 2>/dev/null; fi
+            plan=" tfplan"
+            var_file=""
+            var=""
+          fi
+          args="${{ steps.arg.outputs.arg-destroy }}${var_file}${var}${{ steps.arg.outputs.arg-backup }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-state-out }}${{ steps.arg.outputs.arg-state }}${{ steps.arg.outputs.arg-target }}${plan}"
+          echo "$INPUTS_TOOL apply${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' | sed 's/ --/\n --/g' > tf.command.txt
+          $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} apply${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
         fi
-        args="${{ steps.arg.outputs.arg-destroy }}${var_file}${var}${{ steps.arg.outputs.arg-backup }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-state-out }}${{ steps.arg.outputs.arg-state }}${{ steps.arg.outputs.arg-target }}${plan}"
-        echo "$INPUTS_TOOL apply${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
-        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} apply${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
 
     - if: ${{ !cancelled() && steps.identifier.outcome == 'success' && contains(fromJSON('["plan", "apply", "init"]'), inputs.command) }}
       id: post
@@ -332,10 +421,18 @@ runs:
         INPUTS_PRESERVE_PLAN: ${{ inputs.preserve-plan }}
         INPUTS_SHOW_ARGS: ${{ inputs.show-args }}
         INPUTS_TAG_ACTOR: ${{ inputs.tag-actor }}
+        INPUTS_TOOL: ${{ inputs.tool }}
         path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       shell: bash
       run: |
         # Post output.
+        # Terragrunt doesn't use -chdir, it changes directory first
+        if [[ "$INPUTS_TOOL" == "terragrunt" ]]; then
+          if [[ -n "${{ inputs.arg-chdir || inputs.working-directory }}" ]]; then
+            cd "${{ inputs.arg-chdir || inputs.working-directory }}"
+          fi
+        fi
+
         # Parse the "tf.command.txt" file.
         command=$(cat tf.command.txt)
 
@@ -349,7 +446,7 @@ runs:
         command_append=""
         IFS=',' read -ra show_args <<< "$INPUTS_SHOW_ARGS"
         for arg in "${show_args[@]}"; do
-          command_append+=$(echo "${{ steps.arg.outputs.arg-workspace }}${{ steps.arg.outputs.arg-backend-config }}${{ steps.arg.outputs.arg-backend }}${{ steps.arg.outputs.arg-backup }}${{ steps.arg.outputs.arg-check }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-destroy }}${{ steps.arg.outputs.arg-detailed-exitcode }}${{ steps.arg.outputs.arg-diff }}${{ steps.arg.outputs.arg-force-copy }}${{ steps.arg.outputs.arg-from-module }}${{ steps.arg.outputs.arg-generate-config-out }}${{ steps.arg.outputs.arg-get }}${{ steps.arg.outputs.arg-list }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-lockfile }}${{ steps.arg.outputs.arg-migrate-state }}${{ steps.arg.outputs.arg-no-tests }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-plugin-dir }}${{ steps.arg.outputs.arg-reconfigure }}${{ steps.arg.outputs.arg-recursive }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-state-out }}${{ steps.arg.outputs.arg-state }}${{ steps.arg.outputs.arg-target }}${{ steps.arg.outputs.arg-test-directory }}${{ steps.arg.outputs.arg-upgrade }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-write }}${{ steps.arg.outputs.arg-auto-approve }}" | sed 's/ -/\n -/g' | grep "^ -${arg}" || true)
+          command_append+=$(echo "${{ steps.arg.outputs.arg-workspace }}${{ steps.arg.outputs.arg-backend-config }}${{ steps.arg.outputs.arg-backend }}${{ steps.arg.outputs.arg-backup }}${{ steps.arg.outputs.arg-check }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-destroy }}${{ steps.arg.outputs.arg-detailed-exitcode }}${{ steps.arg.outputs.arg-diff }}${{ steps.arg.outputs.arg-force-copy }}${{ steps.arg.outputs.arg-from-module }}${{ steps.arg.outputs.arg-generate-config-out }}${{ steps.arg.outputs.arg-get }}${{ steps.arg.outputs.arg-list }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-lockfile }}${{ steps.arg.outputs.arg-migrate-state }}${{ steps.arg.outputs.arg-no-tests }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-plugin-dir }}${{ steps.arg.outputs.arg-reconfigure }}${{ steps.arg.outputs.arg-recursive }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-state-out }}${{ steps.arg.outputs.arg-state }}${{ steps.arg.outputs.arg-target }}${{ steps.arg.outputs.arg-test-directory }}${{ steps.arg.outputs.arg-upgrade }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-write }}${{ steps.arg.outputs.arg-auto-approve }}" | sed 's/ -/\n -/g' | sed 's/ --/\n --/g' | grep "^ -${arg}" || true)
         done
 
         # Consolidate 'command', taking both "hide-args" and "show-args" into account.
@@ -362,7 +459,12 @@ runs:
         echo "result<<EORESULTTFVIAPR"$'\n'"$console"$'\n'EORESULTTFVIAPR >> "$GITHUB_OUTPUT"
 
         # Parse the "tf.console.txt" file for the summary.
-        summary=$(awk '/^(Error:|Plan:|Apply complete!|No changes.|Success)/ {line=$0} END {if (line) print line; else print "View output."}' tf.console.txt)
+        if [[ "$INPUTS_TOOL" == "terragrunt" ]]; then
+          # Terragrunt wraps output with ANSI codes and prefixes, so we need to strip them
+          summary=$(awk '/Plan: [0-9]+ to add/ {line=$0} /Apply complete!/ {line=$0} /No changes\./ {line=$0} /Error:/ {line=$0} /Success/ {line=$0} END {if (line) print line; else print "View output."}' tf.console.txt | sed 's/\x1b\[[0-9;]*m//g' | sed 's/.*terraform: //')
+        else
+          summary=$(awk '/^(Error:|Plan:|Apply complete!|No changes.|Success)/ {line=$0} END {if (line) print line; else print "View output."}' tf.console.txt)
+        fi
         echo "summary=$summary" >> "$GITHUB_OUTPUT"
 
         # If "steps.format.outcome" failed, set syntax highlighting to "diff", otherwise set it to "hcl".
@@ -526,7 +628,7 @@ outputs:
     description: "ID of the check run."
     value: ${{ steps.post.outputs.check_id }}
   command:
-    description: "Input of the last TF command."
+    description: "Input of the last infrastructure command."
     value: ${{ steps.post.outputs.command }}
   comment-body:
     description: "Body of the PR comment."
@@ -538,7 +640,7 @@ outputs:
     description: "Diff of changes, if present (truncated)."
     value: ${{ steps.post.outputs.diff }}
   exitcode:
-    description: "Exit code of the last TF command."
+    description: "Exit code of the last infrastructure command."
     value: ${{ steps.apply.outputs.exit_code || steps.plan.outputs.exit_code || steps.validate.outputs.exit_code || steps.initialize.outputs.exit_code || steps.format.outputs.exit_code }}
   identifier:
     description: "Unique name of the workflow run and artifact."
@@ -553,13 +655,13 @@ outputs:
     description: "URL of the plan file artifact."
     value: ${{ steps.upload.outputs.artifact-url || steps.upload-v3.outputs.artifact-url }}
   result:
-    description: "Result of the last TF command (truncated)."
+    description: "Result of the last infrastructure command (truncated)."
     value: ${{ steps.post.outputs.result }}
   run-url:
     description: "URL of the workflow run."
     value: ${{ steps.post.outputs.run_url }}
   summary:
-    description: "Summary of the last TF command."
+    description: "Summary of the last infrastructure command."
     value: ${{ steps.post.outputs.summary }}
 
 inputs:
@@ -586,7 +688,7 @@ inputs:
     required: false
   format:
     default: "false"
-    description: "Check format of TF code (e.g., `false`)."
+    description: "Check format of infrastructure code (e.g., `false`)."
     required: false
   hide-args:
     default: "detailed-exitcode,parallelism,lock,out,var="
@@ -630,7 +732,7 @@ inputs:
     required: false
   tool:
     default: "terraform"
-    description: "Provisioning tool to use between: `terraform` or `tofu` (e.g., `terraform`)."
+    description: "Provisioning tool to use between: `terraform`, `tofu`, or `terragrunt` (e.g., `terraform`)."
     required: false
   upload-plan:
     default: "true"
@@ -638,11 +740,11 @@ inputs:
     required: false
   validate:
     default: "false"
-    description: "Check validation of TF code (e.g., `false`)."
+    description: "Check validation of infrastructure code (e.g., `false`)."
     required: false
   working-directory:
     default: ""
-    description: "Specify the working directory of TF code, alias of `arg-chdir` (e.g., `stacks/dev`)."
+    description: "Specify the working directory of infrastructure code, alias of `arg-chdir` (e.g., `stacks/dev`)."
     required: false
 
   # CLI arguments.
@@ -657,6 +759,10 @@ inputs:
   arg-backend:
     default: ""
     description: "backend"
+    required: false
+  arg-backend-bootstrap:
+    default: ""
+    description: "Enable backend bootstrap for Terragrunt (adds --backend-bootstrap). Set to 'true' to enable."
     required: false
   arg-backup:
     default: ""

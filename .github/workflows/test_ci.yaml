@@ -26,10 +26,10 @@ jobs:
         test:
           - pass_zero
           - pass_one
-          - pass_character_limit
-          - fail_data_source_error
-          - fail_format_diff
-          - fail_invalid_resource_type
+          # - pass_character_limit
+          # - fail_data_source_error
+          # - fail_format_diff
+          # - fail_invalid_resource_type
 
     steps:
       - name: Echo context

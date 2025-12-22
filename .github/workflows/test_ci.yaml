@@ -97,3 +97,7 @@ jobs:
           echo "run-url: ${{ steps.tf.outputs.run-url }}"
           echo "summary: ${{ steps.tf.outputs.summary }}"
           ${{ matrix.tool }} -chdir=tests/${{ matrix.test }} show -no-color tfplan
+
+      - name: Test
+        if: ${{ contains(steps.tf.outputs.summary, ', 0 to destroy')}}
+        run: exit 0

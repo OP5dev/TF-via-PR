@@ -99,5 +99,5 @@ jobs:
           ${{ matrix.tool }} -chdir=tests/${{ matrix.test }} show -no-color tfplan
 
       - name: Test
-        if: ${{ contains(steps.tf.outputs.summary, ', 0 to destroy')}}
+        if: ${{ contains(steps.tf.outputs.summary, ', 1 to destroy')}}
         run: exit 0

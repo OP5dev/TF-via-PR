@@ -181,6 +181,7 @@ All supported CLI argument inputs are [listed below](#arguments) with accompanyi
 | Security | `preserve-plan`     | Preserve plan file "tfplan" in the given working directory after workflow execution.</br>Default: `false`                                 |
 | Security | `upload-plan`       | Upload plan file as GitHub workflow artifact.</br>Default: `true`                                                                         |
 | Security | `retention-days`    | Duration after which plan file artifact will expire in days.</br>Example: `90`                                                            |
+| Artifact | `build-artifacts`   | Paths to files/directories to upload with plan and restore during apply.<sup>7</sup></br>Example: `build/bundle.zip`                      |
 | Security | `token`             | Specify a GitHub token.</br>Default: `${{ github.token }}`                                                                                |
 | UI       | `expand-diff`       | Expand the collapsible diff section.</br>Default: `false`                                                                                 |
 | UI       | `expand-summary`    | Expand the collapsible summary section.</br>Default: `false`                                                                              |
@@ -199,7 +200,14 @@ All supported CLI argument inputs are [listed below](#arguments) with accompanyi
 1. The `on-diff` option is true when the exit code of the last TF command is non-zero (ensure `terraform_wrapper`/`tofu_wrapper` is set to `false`).</br></br>
 1. The default behavior of `comment-method` is to update the existing PR comment with the latest plan/apply output, making it easy to track changes over time through the comment's revision history.</br></br>
   [![PR comment revision history comparing plan and apply outputs.](/.github/assets/revisions.png)](https://raw.githubusercontent.com/op5dev/tf-via-pr/refs/heads/main/.github/assets/revisions.png "View full-size image.")</br></br>
-1. It can be desirable to hide certain arguments from the last run command input to prevent exposure in the PR comment (e.g., sensitive `arg-var` values). Conversely, it can be desirable to show other arguments even if they are not in last run command input (e.g., `arg-workspace` or `arg-backend-config` selection).
+1. It can be desirable to hide certain arguments from the last run command input to prevent exposure in the PR comment (e.g., sensitive `arg-var` values). Conversely, it can be desirable to show other arguments even if they are not in last run command input (e.g., `arg-workspace` or `arg-backend-config` selection).</br></br>
+1. The `build-artifacts` input accepts newline or comma-separated paths to files or directories that should be uploaded alongside the plan file and restored during apply. This is useful when using `data.archive_file` or other resources that generate interim build files needed during apply (e.g., zip archives for Lambda deployments).</br>
+  Example usage:
+    ```yaml
+    build-artifacts: |
+      build/bundle.zip
+      dist/
+    ```
 
 </br>
 
@@ -322,7 +330,6 @@ View [all notable changes](https://github.com/op5dev/tf-via-pr/releases "Release
 
 - Handling of inputs which contain space(s) (e.g., `working-directory: path to/directory`).
 - Handling of comma-separated inputs which contain comma(s) (e.g., `arg-var: token=1,2,3`); workaround with `TF_CLI_ARGS` [environment variable](https://developer.hashicorp.com/terraform/cli/config/environment-variables#tf_cli_args-and-tf_cli_args_name).
-- Handling of interim build artifact(s) between `plan` and `apply` commands (e.g., zip archive); workaround with `arg-auto-approve: true` so that `apply` rebuilds artifact(s) for provisioning ([join discussion](https://github.com/OP5dev/TF-via-PR/issues/517)).
 
 </br>
 

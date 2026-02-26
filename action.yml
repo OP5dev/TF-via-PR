@@ -204,8 +204,8 @@ runs:
         if [[ -z "$artifact_id" ]]; then echo "Unable to locate plan file: ${{ steps.identifier.outputs.name }}." && exit 1; fi
         gh api /repos/${{ github.repository }}/actions/artifacts/${artifact_id}/zip --header "$GH_API" --method GET > "${{ steps.identifier.outputs.name }}.zip"
 
-        # Unzip the plan file to the working directory, then clean up the zip file.
-        unzip "${{ steps.identifier.outputs.name }}.zip" -d "$INPUTS_ARG_CHDIR"
+        # Unzip the plan file to the working directory (or current directory if not specified).
+        unzip "${{ steps.identifier.outputs.name }}.zip" -d "${INPUTS_ARG_CHDIR:-.}"
         rm --force "${{ steps.identifier.outputs.name }}.zip"
 
     - if: ${{ inputs.plan-encrypt != '' && steps.download.outcome == 'success' }}
@@ -219,6 +219,64 @@ runs:
         printf "%s" "$pass" > "$temp_file"
         openssl enc -aes-256-ctr -pbkdf2 -salt -in "$path.encrypted" -out "$path.decrypted" -pass file:"$temp_file" -d
         mv --force --verbose "$path.decrypted" "$path"
+
+    - if: ${{ steps.download.outcome == 'success' }}
+      id: restore-build-artifacts
+      env:
+        INPUTS_ARG_CHDIR: ${{ inputs.arg-chdir || inputs.working-directory }}
+      shell: bash
+      run: |
+        # Restore build artifacts from staging directory.
+        workdir="${INPUTS_ARG_CHDIR:-.}"
+        staging_dir="$workdir/.tfviapr-artifacts"
+        manifest_file="$staging_dir/manifest.json"
+
+        # Skip if no build artifacts were staged.
+        if [[ ! -f "$manifest_file" ]]; then
+          echo "No build artifacts manifest found, skipping restore."
+          exit 0
+        fi
+
+        echo "Restoring build artifacts from manifest: $manifest_file"
+
+        # Parse manifest and restore each artifact.
+        artifacts=$(jq -c '.artifacts[]' "$manifest_file" 2>/dev/null || echo "")
+        if [[ -z "$artifacts" ]]; then
+          echo "No artifacts in manifest."
+          rm -rf "$staging_dir"
+          exit 0
+        fi
+
+        while IFS= read -r artifact; do
+          rel_path=$(echo "$artifact" | jq -r '.path')
+          staging_name=$(echo "$artifact" | jq -r '.staging')
+          artifact_type=$(echo "$artifact" | jq -r '.type')
+
+          # Determine destination path.
+          if [[ "$rel_path" = /* ]]; then
+            # Absolute path.
+            dest_path="$rel_path"
+          else
+            # Relative path - restore relative to working directory.
+            dest_path="$workdir/$rel_path"
+          fi
+
+          # Create parent directory if needed.
+          dest_dir=$(dirname "$dest_path")
+          mkdir -p "$dest_dir"
+
+          # Restore file or directory.
+          if [[ "$artifact_type" == "directory" ]]; then
+            cp -r "$staging_dir/$staging_name" "$dest_path"
+          else
+            cp "$staging_dir/$staging_name" "$dest_path"
+          fi
+          echo "Restored build artifact: $staging_dir/$staging_name -> $dest_path"
+        done <<< "$artifacts"
+
+        # Clean up staging directory.
+        rm -rf "$staging_dir"
+        echo "Build artifacts restored successfully."
 
     - if: ${{ steps.plan.outcome == 'success' || steps.download.outcome == 'success' }}
       env:
@@ -254,12 +312,72 @@ runs:
           rm --force "$path"
         fi
 
+    - if: ${{ inputs.build-artifacts != '' && steps.plan.outcome == 'success' }}
+      id: stage-build-artifacts
+      env:
+        INPUTS_ARG_CHDIR: ${{ inputs.arg-chdir || inputs.working-directory }}
+        INPUTS_BUILD_ARTIFACTS: ${{ inputs.build-artifacts }}
+      shell: bash
+      run: |
+        # Stage build artifacts for upload.
+        # Create staging directory and manifest file.
+        workdir="${INPUTS_ARG_CHDIR:-.}"
+        staging_dir="$workdir/.tfviapr-artifacts"
+        manifest_file="$staging_dir/manifest.json"
+        mkdir -p "$staging_dir"
+        echo '{"artifacts":[' > "$manifest_file"
+
+        # Parse build-artifacts input (newline or comma-separated).
+        artifacts=$(echo "$INPUTS_BUILD_ARTIFACTS" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$')
+        first=true
+
+        while IFS= read -r artifact_path; do
+          # Resolve path relative to working directory.
+          if [[ "$artifact_path" = /* ]]; then
+            # Absolute path - use as-is.
+            src_path="$artifact_path"
+            rel_path="$artifact_path"
+          else
+            # Relative path - resolve from working directory.
+            src_path="$workdir/$artifact_path"
+            rel_path="$artifact_path"
+          fi
+
+          if [[ ! -e "$src_path" ]]; then
+            echo "Warning: Build artifact not found: $src_path"
+            continue
+          fi
+
+          # Generate a unique staging name to avoid conflicts.
+          staging_name=$(echo "$rel_path" | md5sum | cut -d' ' -f1)
+
+          # Copy file or directory to staging area.
+          if [[ -d "$src_path" ]]; then
+            cp -r "$src_path" "$staging_dir/$staging_name"
+            artifact_type="directory"
+          else
+            cp "$src_path" "$staging_dir/$staging_name"
+            artifact_type="file"
+          fi
+
+          # Add to manifest.
+          if [[ "$first" != "true" ]]; then echo ',' >> "$manifest_file"; fi
+          first=false
+          echo "{\"path\":\"$rel_path\",\"staging\":\"$staging_name\",\"type\":\"$artifact_type\"}" >> "$manifest_file"
+          echo "Staged build artifact: $src_path -> $staging_dir/$staging_name"
+        done <<< "$artifacts"
+
+        echo ']}' >> "$manifest_file"
+        echo "Build artifacts manifest created: $manifest_file"
+
     - if: ${{ inputs.command == 'plan' && inputs.upload-plan == 'true' && (github.server_url == 'https://github.com' || contains(github.server_url, '.ghe.com')) }}
       id: upload
       uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
       with:
         name: ${{ steps.identifier.outputs.name }}
-        path: ${{ format('{0}{1}tfplan{2}', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '', inputs.plan-encrypt != '' && '.encrypted' || '') }}
+        path: |
+          ${{ format('{0}{1}tfplan{2}', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '', inputs.plan-encrypt != '' && '.encrypted' || '') }}
+          ${{ inputs.build-artifacts != '' && format('{0}{1}.tfviapr-artifacts', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') || '' }}
         retention-days: ${{ inputs.retention-days }}
         overwrite: true
 
@@ -268,8 +386,21 @@ runs:
       uses: actions/upload-artifact@c24449f33cd45d4826c6702db7e49f7cdb9b551d # v3.2.1-node20
       with:
         name: ${{ steps.identifier.outputs.name }}
-        path: ${{ format('{0}{1}tfplan{2}', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '', inputs.plan-encrypt != '' && '.encrypted' || '') }}
+        path: |
+          ${{ format('{0}{1}tfplan{2}', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '', inputs.plan-encrypt != '' && '.encrypted' || '') }}
+          ${{ inputs.build-artifacts != '' && format('{0}{1}.tfviapr-artifacts', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') || '' }}
         retention-days: ${{ inputs.retention-days }}
+
+    - if: ${{ inputs.build-artifacts != '' && (steps.upload.outcome == 'success' || steps.upload-v3.outcome == 'success') }}
+      env:
+        INPUTS_ARG_CHDIR: ${{ inputs.arg-chdir || inputs.working-directory }}
+      shell: bash
+      run: |
+        # Clean up build artifacts staging directory after upload.
+        workdir="${INPUTS_ARG_CHDIR:-.}"
+        staging_dir="$workdir/.tfviapr-artifacts"
+        rm -rf "$staging_dir"
+        echo "Cleaned up build artifacts staging directory."
 
     - if: ${{ inputs.plan-parity == 'true' && (steps.download.outcome == 'success' || inputs.plan-file != '') }}
       env:
@@ -635,6 +766,10 @@ inputs:
   upload-plan:
     default: "true"
     description: "Upload plan file as GitHub workflow artifact (e.g., `true`)."
+    required: false
+  build-artifacts:
+    default: ""
+    description: "Newline or comma-separated paths to files/directories to upload with plan and restore during apply (e.g., `build/bundle.zip`)."
     required: false
   validate:
     default: "false"

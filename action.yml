@@ -398,7 +398,7 @@ runs:
         echo "job=$job_id" >> "$GITHUB_OUTPUT"
 
         # Add summary to the job status.
-        check_run=$(gh api /repos/${{ github.repository }}/check-runs/${job_id} --header "$GH_API" --method PATCH --field "output[title]=${summary}" --field "output[summary]=${summary}")
+        check_run=$(GH_TOKEN=${{ github.token }} gh api /repos/${{ github.repository }}/check-runs/${job_id} --header "$GH_API" --method PATCH --field "output[title]=${summary}" --field "output[summary]=${summary}")
 
         # Get the step number that has status "in_progress" from the current job.
         workflow_step=$(echo "$workflow_run" | jq --raw-output --arg job_id "$job_id" '.jobs[] | select(.id == ($job_id | tonumber)) | .steps[] | select(.status == "in_progress") | .number')

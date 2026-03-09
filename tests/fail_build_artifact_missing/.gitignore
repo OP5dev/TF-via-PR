@@ -1,0 +1,8 @@
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfplan
+tfplan
+
+# Build artifacts (generated during plan)
+build/

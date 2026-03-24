@@ -325,6 +325,7 @@ runs:
         GH_MATRIX: ${{ toJSON(matrix) }}
         INPUTS_COMMAND: ${{ inputs.command }}
         INPUTS_COMMENT_METHOD: ${{ inputs.comment-method }}
+        INPUTS_POST_COMMENT: ${{ inputs.post-comment }}
         INPUTS_COMMENT_PR: ${{ inputs.comment-pr }}
         INPUTS_EXPAND_DIFF: ${{ inputs.expand-diff }}
         INPUTS_EXPAND_SUMMARY: ${{ inputs.expand-summary }}
@@ -482,6 +483,11 @@ runs:
           exit 0
         fi
 
+        # Exit early if PR comment posting is disabled.
+        if [[ "$INPUTS_POST_COMMENT" != "true" ]]; then
+          exit 0
+        fi
+
         # Check if the PR contains a bot comment with the same identifier.
         list_comments=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method GET --paginate)
         bot_comment=$(echo "$list_comments" | jq --raw-output --arg identifier "${{ steps.identifier.outputs.name }}" '.[] | select(.user.type == "Bot") | select(.body | contains($identifier)) | .id' | tail -n 1)
@@ -603,6 +609,10 @@ inputs:
   plan-parity:
     default: "false"
     description: "Replace the plan file if it matches a newly-generated one to prevent stale apply (e.g., `false`)."
+    required: false
+  post-comment:
+    default: "true"
+    description: "Post or update the PR comment from this action. Disable to use `comment-body` output without writing a PR comment (e.g., `true`)."
     required: false
   pr-number:
     default: ""

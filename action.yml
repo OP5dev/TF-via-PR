@@ -332,6 +332,7 @@ runs:
         INPUTS_PRESERVE_PLAN: ${{ inputs.preserve-plan }}
         INPUTS_SHOW_ARGS: ${{ inputs.show-args }}
         INPUTS_TAG_ACTOR: ${{ inputs.tag-actor }}
+        INPUTS_BODY_PREFIX: ${{ inputs.body-prefix }}
         path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       shell: bash
       run: |
@@ -442,6 +443,7 @@ runs:
 
         # Collate body content.
         body=$(cat <<EOBODYTFVIAPR
+        ${INPUTS_BODY_PREFIX}
         <!-- placeholder-1 -->
         \`\`\`fish
         ${command}
@@ -643,6 +645,10 @@ inputs:
   working-directory:
     default: ""
     description: "Specify the working directory of TF code, alias of `arg-chdir` (e.g., `stacks/dev`)."
+    required: false
+  body-prefix:
+    default: ""
+    description: "Prefix for the PR comment body (e.g., '# Terraform Plan for <environment>')."
     required: false
 
   # CLI arguments.

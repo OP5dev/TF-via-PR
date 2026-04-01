@@ -333,6 +333,7 @@ runs:
         INPUTS_SHOW_ARGS: ${{ inputs.show-args }}
         INPUTS_TAG_ACTOR: ${{ inputs.tag-actor }}
         INPUTS_COMMENT_PREFIX: ${{ inputs.comment-prefix }}
+        INPUTS_COMMENT_SUFFIX: ${{ inputs.comment-suffix }}
         path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       shell: bash
       run: |
@@ -455,6 +456,7 @@ runs:
 
         <!-- placeholder-4 -->
         ###### By ${tag_actor}${{ github.triggering_actor }} at ${{ github.event.pull_request.updated_at || github.event.comment.created_at || github.event.head_commit.timestamp || github.event.merge_group.head_commit.timestamp }} [(view log)](${run_url}).
+        ${INPUTS_COMMENT_SUFFIX}
         </summary>
 
         \`\`\`${syntax}
@@ -649,6 +651,10 @@ inputs:
   comment-prefix:
     default: ""
     description: "Prefix for the PR comment body (e.g., '# Terraform Plan for <environment>')."
+    required: false
+  comment-suffix:
+    default: ""
+    description: "Suffix for the PR comment body (e.g., '### Triggered by <actor> on aws-account <accountID>')."
     required: false
 
   # CLI arguments.

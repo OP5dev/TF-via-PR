@@ -333,7 +333,6 @@ runs:
         INPUTS_SHOW_ARGS: ${{ inputs.show-args }}
         INPUTS_TAG_ACTOR: ${{ inputs.tag-actor }}
         INPUTS_COMMENT_PREFIX: ${{ inputs.comment-prefix }}
-        INPUTS_DETAILS_SUFFIX: ${{ inputs.details-suffix }}
         path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       shell: bash
       run: |
@@ -455,7 +454,7 @@ runs:
         <details${{ env.INPUTS_EXPAND_SUMMARY == 'true' && ' open' || '' }}><summary>${summary}</br>
 
         <!-- placeholder-4 -->
-        ###### By ${tag_actor}${{ github.triggering_actor }} at ${{ github.event.pull_request.updated_at || github.event.comment.created_at || github.event.head_commit.timestamp || github.event.merge_group.head_commit.timestamp }} [(view log)](${run_url}). ${INPUTS_DETAILS_SUFFIX}
+        ###### By ${tag_actor}${{ github.triggering_actor }} at ${{ github.event.pull_request.updated_at || github.event.comment.created_at || github.event.head_commit.timestamp || github.event.merge_group.head_commit.timestamp }} [(view log)](${run_url}).
         </summary>
 
         \`\`\`${syntax}
@@ -650,10 +649,6 @@ inputs:
   comment-prefix:
     default: ""
     description: "Prefix for the PR comment body (e.g., '# Terraform Plan for <environment>')."
-    required: false
-  details-suffix:
-    default: ""
-    description: "Suffix for the details line in the PR comment (e.g., 'Executed on AWS account <accountID>')."
     required: false
 
   # CLI arguments.

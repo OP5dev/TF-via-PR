@@ -189,7 +189,7 @@ All supported CLI argument inputs are [listed below](#arguments) with accompanyi
 | UI       | `tag-actor`         | Tag the workflow triggering actor: `always`, `on-diff`, or `never`.<sup>4</sup></br>Default: `always`                                     |
 | UI       | `hide-args`         | Hide comma-separated list of CLI arguments from the command input.<sup>6</sup></br>Default: `detailed-exitcode,parallelism,lock,out,var=` |
 | UI       | `show-args`         | Show comma-separated list of CLI arguments in the command input.<sup>6</sup></br>Default: `workspace`                                     |
-| UI       | `body-prefix`       | Optional content to prepend to the default comment                                                                                        |
+| UI       | `comment-prefix`    | Optional content to prepend to the default comment                                                                                        |
 
 </br>
 

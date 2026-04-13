@@ -256,7 +256,7 @@ runs:
 
     - if: ${{ inputs.command == 'plan' && inputs.upload-plan == 'true' && (github.server_url == 'https://github.com' || contains(github.server_url, '.ghe.com')) }}
       id: upload
-      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: ${{ steps.identifier.outputs.name }}
         path: ${{ format('{0}{1}tfplan{2}', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '', inputs.plan-encrypt != '' && '.encrypted' || '') }}
@@ -265,7 +265,7 @@ runs:
 
     - if: ${{ inputs.command == 'plan' && inputs.upload-plan == 'true' && !(github.server_url == 'https://github.com' || contains(github.server_url, '.ghe.com')) }}
       id: upload-v3
-      uses: actions/upload-artifact@c24449f33cd45d4826c6702db7e49f7cdb9b551d # v3.2.1-node20
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v3.2.1-node20
       with:
         name: ${{ steps.identifier.outputs.name }}
         path: ${{ format('{0}{1}tfplan{2}', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '', inputs.plan-encrypt != '' && '.encrypted' || '') }}

@@ -403,15 +403,16 @@ runs:
         echo "job=$job_id" >> "$GITHUB_OUTPUT"
 
         # Add summary to the job status.
-        check_run=$(GH_TOKEN=${{ github.token }} gh api /repos/${{ github.repository }}/check-runs/${job_id} --header "$GH_API" --method PATCH --field "output[title]=${summary}" --field "output[summary]=${summary}")
+        check_run=$(GH_TOKEN=${{ github.token }} gh api /repos/${{ github.repository }}/check-runs/${job_id} --header "$GH_API" --method PATCH --field "output[title]=${summary}" --field "output[summary]=${summary}") || true
 
         # Get the step number that has status "in_progress" from the current job.
         workflow_step=$(echo "$workflow_run" | jq --raw-output --arg job_id "$job_id" '.jobs[] | select(.id == ($job_id | tonumber)) | .steps[] | select(.status == "in_progress") | .number')
 
         # From "check_run", echo "html_url".
-        check_url=$(echo "$check_run" | jq --raw-output '.html_url')
-        echo "check_id=$(echo "$check_run" | jq --raw-output '.id')" >> "$GITHUB_OUTPUT"
-        run_url=$(echo ${check_url}#step:${workflow_step}:1)
+        check_url=$(echo "$check_run" | jq --raw-output '.html_url // empty' 2>/dev/null) || true
+        echo "check_id=$(echo "$check_run" | jq --raw-output '.id // empty' 2>/dev/null)" >> "$GITHUB_OUTPUT"
+        run_url=${check_url:+${check_url}#step:${workflow_step}:1}
+        run_url=${run_url:-${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}}
         echo "run_url=$run_url" >> "$GITHUB_OUTPUT"
 
         # If "tf.diff.txt" exists, display it within a "diff" block, truncated for character limit.
@@ -499,7 +500,7 @@ runs:
         elif [[ ("$INPUTS_COMMENT_PR" == "on-diff" || "$INPUTS_COMMENT_PR" == "on-change") && "$INPUTS_COMMAND" != "plan" && -n "$bot_comment" ]]; then
           create_comment="true"
         elif [[ ("$INPUTS_COMMENT_PR" == "on-diff" || "$INPUTS_COMMENT_PR" == "on-change") && "$exitcode" -eq 0 && -n "$bot_comment" ]]; then
-          gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method DELETE
+          gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method DELETE || true
           exit 0
         fi
 
@@ -512,18 +513,18 @@ runs:
         if [[ -n "$bot_comment" ]]; then
           if [[ "$INPUTS_COMMENT_METHOD" == "update" ]]; then
             # Update existing comment.
-            pr_comment=$(gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method PATCH --field "body=${body}")
-            echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id')" >> "$GITHUB_OUTPUT"
+            pr_comment=$(gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method PATCH --field "body=${body}") || true
+            echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id // empty' 2>/dev/null)" >> "$GITHUB_OUTPUT"
           elif [[ "$INPUTS_COMMENT_METHOD" == "recreate" ]]; then
             # Delete previous comment before posting a new one.
-            gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method DELETE
-            pr_comment=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method POST --field "body=${body}")
-            echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id')" >> "$GITHUB_OUTPUT"
+            gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method DELETE || true
+            pr_comment=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method POST --field "body=${body}") || true
+            echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id // empty' 2>/dev/null)" >> "$GITHUB_OUTPUT"
           fi
         else
           # Post new comment.
-          pr_comment=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method POST --field "body=${body}")
-          echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id')" >> "$GITHUB_OUTPUT"
+          pr_comment=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method POST --field "body=${body}") || true
+          echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id // empty' 2>/dev/null)" >> "$GITHUB_OUTPUT"
         fi
 
 outputs:

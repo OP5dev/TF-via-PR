@@ -23,6 +23,7 @@ runs:
 
     - id: arg
       env:
+        GH_REPO: ${{ github.repository }}
         INPUTS_ARG_AUTO_APPROVE: ${{ inputs.arg-auto-approve }}
         INPUTS_ARG_BACKEND_CONFIG: ${{ inputs.arg-backend-config }}
         INPUTS_ARG_BACKEND: ${{ inputs.arg-backend }}
@@ -66,12 +67,13 @@ runs:
         # Populate variables.
         # Environment variables.
         echo "GH_API=X-GitHub-Api-Version:2022-11-28" >> "$GITHUB_ENV"
+        echo "GH_HOST=$(echo $GITHUB_SERVER_URL | sed 's/.*:\/\///')" >> "$GITHUB_ENV"
+        echo "GH_REPO=$GH_REPO" >> "$GITHUB_ENV"
         echo "GH_TOKEN=$INPUTS_TOKEN" >> "$GITHUB_ENV"
         echo "TF_CLI_ARGS=$([[ -n "${{ env.TF_CLI_ARGS }}" ]] && echo "${{ env.TF_CLI_ARGS }} -no-color" || echo "-no-color")" >> "$GITHUB_ENV"
         echo "TF_IN_AUTOMATION=true" >> "$GITHUB_ENV"
         echo "TF_INPUT=false" >> "$GITHUB_ENV"
         echo "TF_WORKSPACE=$TF_WORKSPACE" >> "$GITHUB_ENV"
-        echo "GH_HOST=$(echo $GITHUB_SERVER_URL | sed 's/.*:\/\///')" >> "$GITHUB_ENV"
 
         # CLI arguments.
         echo arg-auto-approve=$([[ "${INPUTS_ARG_AUTO_APPROVE,,}" == "true" ]] && echo " -auto-approve" || echo "") >> "$GITHUB_OUTPUT"
@@ -117,7 +119,6 @@ runs:
         GH_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.event.workflow_run.head_sha || github.sha }}
         GH_EVENT_NUMBER: ${{ github.event.number || github.event.issue.number }}
         GH_HEAD_REF: ${{ github.event.pull_request.head.label || github.ref_name || github.head_ref || github.ref || '0' }}
-        GH_REPO: ${{ github.repository }}
         GH_WORKFLOW_RUN_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
         INPUTS_PR_NUMBER: ${{ inputs.pr-number }}
         INPUTS_TOOL: ${{ inputs.tool }}
@@ -149,6 +150,7 @@ runs:
         # Generate identifier for the workflow run using MD5 hashing algorithm for concise and unique naming.
         identifier="${{ steps.arg.outputs.arg-chdir }}${{ steps.arg.outputs.arg-workspace }}${{ steps.arg.outputs.arg-backend-config }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }}${{ steps.arg.outputs.arg-destroy }}"
         identifier=$(echo -n "$identifier" | md5sum | awk '{print $1}')
+        echo "GH_IDENTIFIER_NAME=${INPUTS_TOOL}-${pr_number}-${identifier}.tfplan" >> "$GITHUB_ENV"
         echo "name=${INPUTS_TOOL}-${pr_number}-${identifier}.tfplan" >> "$GITHUB_OUTPUT"
 
     - if: ${{ inputs.format == 'true' }}
@@ -205,8 +207,6 @@ runs:
     - if: ${{ inputs.command == 'apply' && inputs.arg-auto-approve != 'true' && inputs.plan-file == '' }}
       id: download
       env:
-        GH_IDENTIFIER_NAME: ${{ steps.identifier.outputs.name }}
-        GH_REPO: ${{ github.repository }}
         INPUTS_ARG_CHDIR: ${{ inputs.arg-chdir || inputs.working-directory }}
       shell: bash
       run: |
@@ -335,10 +335,8 @@ runs:
       env:
         GH_ACTIONS_TOKEN: ${{ github.token }}
         GH_EVENT_TIMESTAMP: ${{ github.event.pull_request.updated_at || github.event.comment.created_at || github.event.head_commit.timestamp || github.event.merge_group.head_commit.timestamp }}
-        GH_IDENTIFIER_NAME: ${{ steps.identifier.outputs.name }}
         GH_MATRIX: ${{ toJSON(matrix) }}
         GH_PR_NUMBER: ${{ steps.identifier.outputs.pr }}
-        GH_REPO: ${{ github.repository }}
         GH_RUN_ATTEMPT: ${{ github.run_attempt }}
         GH_RUN_ID: ${{ github.run_id }}
         GH_SERVER_URL: ${{ github.server_url }}

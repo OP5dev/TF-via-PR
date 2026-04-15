@@ -276,7 +276,7 @@ runs:
 
     - if: ${{ inputs.command == 'plan' && inputs.upload-plan == 'true' && !(github.server_url == 'https://github.com' || contains(github.server_url, '.ghe.com')) }}
       id: upload-v3
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v3.2.1-node20
+      uses: actions/upload-artifact@c6a366c94c3e0affe28c06c8df20a878f24da3cf # v3.2.2
       with:
         name: ${{ steps.identifier.outputs.name }}
         path: ${{ format('{0}{1}tfplan{2}', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '', inputs.plan-encrypt != '' && '.encrypted' || '') }}

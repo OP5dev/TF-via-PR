@@ -132,8 +132,7 @@ runs:
         elif [[ "$GITHUB_EVENT_NAME" == "push" || "$GITHUB_EVENT_NAME" == "repository_dispatch" || "$GITHUB_EVENT_NAME" == "workflow_call" || "$GITHUB_EVENT_NAME" == "workflow_dispatch" || "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
           # List PRs associated with the commit, then get the PR number from the head ref or the latest PR.
           associated_prs=$(gh api /repos/$GH_REPO/commits/$GH_COMMIT_SHA/pulls --header "$GH_API" --method GET --paginate)
-          pr_number=$(echo "$associated_prs" | jq --raw-output '(.[] | select(.head.ref == env.GITHUB_REF_NAME or .head.ref ==
-          .GH_WORKFLOW_RUN_HEAD_BRANCH) | .number) // .[0].number // 0')
+          pr_number=$(echo "$associated_prs" | jq --raw-output '(.[] | select(.head.ref == env.GITHUB_REF_NAME or .head.ref == env.GH_WORKFLOW_RUN_HEAD_BRANCH) | .number) // .[0].number // 0')
         elif [[ "$GITHUB_EVENT_NAME" == "merge_group" ]]; then
           # Get the PR number by parsing the ref name.
           pr_number=$(echo "$GITHUB_REF_NAME" | sed -n 's/.*pr-\([0-9]*\)-.*/\1/p')

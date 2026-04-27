@@ -296,7 +296,8 @@ View [security reporting policy](https://github.com/OP5dev/TF-via-PR?tab=securit
 
 > [!TIP]
 >
-> Pin GitHub Actions to [immutable release tags](https://docs.github.com/en/actions/reference/security/secure-use#using-third-party-actions) to harden pipeline security against supply chain attacks.
+> - Restrict changes to certain environments with [deployment protection rules](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment#deployment-protection-rules "Configuring environment deployment protection rules.").
+> - Integrate [OpenID Connect](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-cloud-providers "Configuring OpenID Connect in cloud providers.") to pass short-lived credentials as environment variables.
 
 <br>
 

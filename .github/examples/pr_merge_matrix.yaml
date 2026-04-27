@@ -10,9 +10,9 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      actions: read        # Required to identify workflow run.
-      checks: write        # Required to add status summary.
-      contents: read       # Required to checkout repository.
+      actions: read # Required to identify workflow run.
+      checks: write # Required to add status summary.
+      contents: read # Required to checkout repository.
       pull-requests: write # Required to add PR comment.
 
     strategy:
@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup TF
         uses: opentofu/setup-opentofu@v1

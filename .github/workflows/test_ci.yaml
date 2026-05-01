@@ -78,6 +78,7 @@ jobs:
 
           comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
           comment-pos-1: ${{ contains(matrix.test, 'pass') && '> [!TIP]<br>Expected to `PASS`.' || '> [!IMPORTANT]<br>Expected to `FAIL`.' }}
+          comment-pos-2: "### Ran `PLAN` in ${{ matrix.test }}"
           hide-args: detailed-exitcode,lock,out,refresh
           tag-actor: never
 

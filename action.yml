@@ -342,7 +342,12 @@ runs:
         GH_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
         INPUTS_COMMAND: ${{ inputs.command }}
         INPUTS_COMMENT_METHOD: ${{ inputs.comment-method }}
-        INPUTS_COMMENT_PLACEHOLDER_1: ${{ inputs.comment-placeholder-1 }}
+        INPUTS_COMMENT_POS_1: ${{ inputs.comment-pos-1 }}
+        INPUTS_COMMENT_POS_2: ${{ inputs.comment-pos-2 }}
+        INPUTS_COMMENT_POS_3: ${{ inputs.comment-pos-3 }}
+        INPUTS_COMMENT_POS_4: ${{ inputs.comment-pos-4 }}
+        INPUTS_COMMENT_POS_5: ${{ inputs.comment-pos-5 }}
+        INPUTS_COMMENT_POS_6: ${{ inputs.comment-pos-6 }}
         INPUTS_COMMENT_PR: ${{ inputs.comment-pr }}
         INPUTS_EXPAND_DIFF: ${{ inputs.expand-diff }}
         INPUTS_EXPAND_SUMMARY: ${{ inputs.expand-summary }}
@@ -462,16 +467,16 @@ runs:
 
         # Collate body content.
         body=$(cat <<EOBODYTFVIAPR
-        ${INPUTS_COMMENT_PLACEHOLDER_1}
+        ${INPUTS_COMMENT_POS_1}
         \`\`\`fish
         ${command}
         \`\`\`
-        <!-- placeholder-2 -->
+        ${INPUTS_COMMENT_POS_2}
         ${diff}
-        <!-- placeholder-3 -->
+        ${INPUTS_COMMENT_POS_3}
         <details${{ env.INPUTS_EXPAND_SUMMARY == 'true' && ' open' || '' }}><summary>${summary}</br>
 
-        <!-- placeholder-4 -->
+        ${INPUTS_COMMENT_POS_4}
         ###### By ${tag_actor}${GH_TRIGGERING_ACTOR} at ${GH_EVENT_TIMESTAMP} [(view log)](${run_url}).
         </summary>
 
@@ -479,9 +484,9 @@ runs:
         ${console}
         \`\`\`
         </details>
-        <!-- placeholder-5 -->
+        ${INPUTS_COMMENT_POS_5}
         <!-- $GH_IDENTIFIER_NAME -->
-        <!-- placeholder-6 -->
+        ${INPUTS_COMMENT_POS_6}
         EOBODYTFVIAPR
         )
 
@@ -592,9 +597,29 @@ inputs:
     default: "update"
     description: "PR comment by: `update` existing comment or `recreate` and delete previous one (e.g., `update`)."
     required: false
-  comment-placeholder-1:
+  comment-pos-1:
     default: ""
-    description: "Markdown content to render at various positions in the PR comment (e.g., TODO)."
+    description: "Markdown content to render at various positions in the PR comment (e.g., `Before command`)."
+    required: false
+  comment-pos-2:
+    default: ""
+    description: "Markdown content to render at various positions in the PR comment (e.g., `Before diff`)."
+    required: false
+  comment-pos-3:
+    default: ""
+    description: "Markdown content to render at various positions in the PR comment (e.g., `Before summary`)."
+    required: false
+  comment-pos-4:
+    default: ""
+    description: "Markdown content to render at various positions in the PR comment (e.g., `Before footer`)."
+    required: false
+  comment-pos-5:
+    default: ""
+    description: "Markdown content to render at various positions in the PR comment (e.g., `Before identifier`)."
+    required: false
+  comment-pos-6:
+    default: ""
+    description: "Markdown content to render at various positions in the PR comment (e.g., `After identifier`)."
     required: false
   comment-pr:
     default: "always"

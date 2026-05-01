@@ -26,10 +26,10 @@ jobs:
         test:
           - pass_zero
           - pass_one
-          # - pass_character_limit
-          # - fail_data_source_error
-          # - fail_format_diff
-          # - fail_invalid_resource_type
+          - pass_character_limit
+          - fail_data_source_error
+          - fail_format_diff
+          - fail_invalid_resource_type
 
     steps:
       - name: Echo context
@@ -77,7 +77,7 @@ jobs:
           retention-days: 1
 
           comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
-          comment-pos-1: "> [!NOTE]\n> Reviewed by security."
+          comment-pos-1: ${{ contains(matrix.test, 'pass') && '> [!TIP]\n>Expected to `PASS`.' || '> [!WARNING]\n>Expected to `FAIL`.' }}
           hide-args: detailed-exitcode,lock,out,refresh
           tag-actor: never
 

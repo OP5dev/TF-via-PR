@@ -77,8 +77,7 @@ jobs:
           retention-days: 1
 
           comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
-          comment-pos-1: ${{ contains(matrix.test, 'pass') && "> [!NOTE]\n> Expected to `PASS`." || "> [!IMPORTANT]\n\n>Expected to `FAIL`." }}
-          comment-pos-2: "> [!NOTE]\n> Reviewed by security."
+          comment-pos-1: ${{ contains(matrix.test, 'pass') && "> [!TIP]<br> Expected to `PASS`." || "> [!IMPORTANT]<br> Expected to `FAIL`." }}
           hide-args: detailed-exitcode,lock,out,refresh
           tag-actor: never
 

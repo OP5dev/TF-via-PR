@@ -598,27 +598,27 @@ inputs:
     description: "PR comment by: `update` existing comment or `recreate` and delete previous one (e.g., `update`)."
     required: false
   comment-pos-1:
-    default: ""
+    default: "<!-- comment-pos-1 -->"
     description: "Markdown content to render at various positions in the PR comment (e.g., `Before command`)."
     required: false
   comment-pos-2:
-    default: ""
+    default: "<!-- comment-pos-2 -->"
     description: "Markdown content to render at various positions in the PR comment (e.g., `Before diff`)."
     required: false
   comment-pos-3:
-    default: ""
+    default: "<!-- comment-pos-3 -->"
     description: "Markdown content to render at various positions in the PR comment (e.g., `Before summary`)."
     required: false
   comment-pos-4:
-    default: ""
+    default: "<!-- comment-pos-4 -->"
     description: "Markdown content to render at various positions in the PR comment (e.g., `Before footer`)."
     required: false
   comment-pos-5:
-    default: ""
+    default: "<!-- comment-pos-5 -->"
     description: "Markdown content to render at various positions in the PR comment (e.g., `Before identifier`)."
     required: false
   comment-pos-6:
-    default: ""
+    default: "<!-- comment-pos-6 -->"
     description: "Markdown content to render at various positions in the PR comment (e.g., `After identifier`)."
     required: false
   comment-pr:

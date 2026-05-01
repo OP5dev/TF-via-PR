@@ -64,7 +64,11 @@ jobs:
           $(echo "$TFLINT_OUTPUT" | sed 's/`/\\`/g')
           \`\`\`
           </details>"
-          echo "result=$tflint" >> "$GITHUB_OUTPUT"
+          {
+            echo 'result<<EOF'
+            echo "$tflint"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
 
       - name: Provision TF
         uses: op5dev/tf-via-pr@v13

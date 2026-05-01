@@ -23,6 +23,7 @@ runs:
 
     - id: arg
       env:
+        GH_REPO: ${{ github.repository }}
         INPUTS_ARG_AUTO_APPROVE: ${{ inputs.arg-auto-approve }}
         INPUTS_ARG_BACKEND_CONFIG: ${{ inputs.arg-backend-config }}
         INPUTS_ARG_BACKEND: ${{ inputs.arg-backend }}
@@ -66,12 +67,13 @@ runs:
         # Populate variables.
         # Environment variables.
         echo "GH_API=X-GitHub-Api-Version:2022-11-28" >> "$GITHUB_ENV"
+        echo "GH_HOST=${GITHUB_SERVER_URL#*://}" >> "$GITHUB_ENV"
+        echo "GH_REPO=$GH_REPO" >> "$GITHUB_ENV"
         echo "GH_TOKEN=$INPUTS_TOKEN" >> "$GITHUB_ENV"
         echo "TF_CLI_ARGS=$([[ -n "${{ env.TF_CLI_ARGS }}" ]] && echo "${{ env.TF_CLI_ARGS }} -no-color" || echo "-no-color")" >> "$GITHUB_ENV"
         echo "TF_IN_AUTOMATION=true" >> "$GITHUB_ENV"
         echo "TF_INPUT=false" >> "$GITHUB_ENV"
         echo "TF_WORKSPACE=$TF_WORKSPACE" >> "$GITHUB_ENV"
-        echo "GH_HOST=$(echo $GITHUB_SERVER_URL | sed 's/.*:\/\///')" >> "$GITHUB_ENV"
 
         # CLI arguments.
         echo arg-auto-approve=$([[ "${INPUTS_ARG_AUTO_APPROVE,,}" == "true" ]] && echo " -auto-approve" || echo "") >> "$GITHUB_OUTPUT"
@@ -114,6 +116,10 @@ runs:
 
     - id: identifier
       env:
+        GH_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.event.workflow_run.head_sha || github.sha }}
+        GH_EVENT_NUMBER: ${{ github.event.number || github.event.issue.number }}
+        GH_HEAD_REF: ${{ github.event.pull_request.head.label || github.ref_name || github.head_ref || github.ref || '0' }}
+        GH_WORKFLOW_RUN_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
         INPUTS_PR_NUMBER: ${{ inputs.pr-number }}
         INPUTS_TOOL: ${{ inputs.tool }}
       shell: bash
@@ -125,20 +131,25 @@ runs:
           pr_number="$INPUTS_PR_NUMBER"
         elif [[ "$GITHUB_EVENT_NAME" == "push" || "$GITHUB_EVENT_NAME" == "repository_dispatch" || "$GITHUB_EVENT_NAME" == "workflow_call" || "$GITHUB_EVENT_NAME" == "workflow_dispatch" || "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
           # List PRs associated with the commit, then get the PR number from the head ref or the latest PR.
-          associated_prs=$(gh api /repos/${{ github.repository }}/commits/${{ github.event.pull_request.head.sha || github.sha }}/pulls --header "$GH_API" --method GET --paginate)
-          pr_number=$(echo "$associated_prs" | jq --raw-output '(.[] | select(.head.ref == env.GITHUB_REF_NAME) | .number) // .[0].number // 0')
+          associated_prs=$(gh api /repos/$GH_REPO/commits/$GH_COMMIT_SHA/pulls --header "$GH_API" --method GET --paginate)
+          pr_number=$(echo "$associated_prs" | jq --raw-output '(.[] | select(.head.ref == env.GITHUB_REF_NAME or .head.ref == env.GH_WORKFLOW_RUN_HEAD_BRANCH) | .number) // .[0].number // 0')
         elif [[ "$GITHUB_EVENT_NAME" == "merge_group" ]]; then
           # Get the PR number by parsing the ref name.
-          pr_number=$(echo "${{ github.ref_name }}" | sed -n 's/.*pr-\([0-9]*\)-.*/\1/p')
+          pr_number=$(echo "$GITHUB_REF_NAME" | sed -n 's/.*pr-\([0-9]*\)-.*/\1/p')
         else
-          # Get the PR number from branch name, otherwise fallback on 0 if the PR number is not found.
-          pr_number=${{ github.event.number || github.event.issue.number }} || $(gh api /repos/${{ github.repository }}/pulls --header "$GH_API" --method GET --paginate --field head="${{ github.ref_name || github.head_ref || github.ref || '0' }}" | jq '.[0].number // 0')
+          # Get the PR number from the event or issue if available; otherwise, look it up by head ref and fallback on 0 if not found.
+          if [[ -n "$GH_EVENT_NUMBER" ]]; then
+            pr_number="$GH_EVENT_NUMBER"
+          else
+            pr_number=$(gh api /repos/$GH_REPO/pulls --header "$GH_API" --method GET --paginate --field head="$GH_HEAD_REF" | jq '.[0].number // 0')
+          fi
         fi
         echo "pr=${pr_number:-0}" >> "$GITHUB_OUTPUT"
 
         # Generate identifier for the workflow run using MD5 hashing algorithm for concise and unique naming.
         identifier="${{ steps.arg.outputs.arg-chdir }}${{ steps.arg.outputs.arg-workspace }}${{ steps.arg.outputs.arg-backend-config }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }}${{ steps.arg.outputs.arg-destroy }}"
         identifier=$(echo -n "$identifier" | md5sum | awk '{print $1}')
+        echo "GH_IDENTIFIER_NAME=${INPUTS_TOOL}-${pr_number}-${identifier}.tfplan" >> "$GITHUB_ENV"
         echo "name=${INPUTS_TOOL}-${pr_number}-${identifier}.tfplan" >> "$GITHUB_OUTPUT"
 
     - if: ${{ inputs.format == 'true' }}
@@ -151,7 +162,7 @@ runs:
         trap 'exit_code="$?"; echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"' EXIT
         args="${{ steps.arg.outputs.arg-check }}${{ steps.arg.outputs.arg-diff }}${{ steps.arg.outputs.arg-list }}${{ steps.arg.outputs.arg-recursive }}${{ steps.arg.outputs.arg-write }}"
         echo "$INPUTS_TOOL fmt${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
-        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} fmt${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
+        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} fmt${args} 2>&1 | tee tf.console.txt
 
     - if: ${{ contains(fromJSON('["plan", "apply", "init"]'), inputs.command) }}
       id: initialize
@@ -163,7 +174,7 @@ runs:
         trap 'exit_code="$?"; echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"' EXIT
         args="${{ steps.arg.outputs.arg-backend-config }}${{ steps.arg.outputs.arg-backend }}${{ env.INPUTS_TOOL == 'tofu' && steps.arg.outputs.arg-var-file || '' }}${{ env.INPUTS_TOOL == 'tofu' && steps.arg.outputs.arg-var || '' }}${{ steps.arg.outputs.arg-force-copy }}${{ steps.arg.outputs.arg-from-module }}${{ steps.arg.outputs.arg-get }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-lockfile }}${{ steps.arg.outputs.arg-migrate-state }}${{ steps.arg.outputs.arg-plugin-dir }}${{ steps.arg.outputs.arg-reconfigure }}${{ steps.arg.outputs.arg-test-directory }}${{ steps.arg.outputs.arg-upgrade }}"
         echo "$INPUTS_TOOL init${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
-        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} init${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
+        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} init${args} 2>&1 | tee tf.console.txt
 
     - if: ${{ inputs.validate == 'true' && contains(fromJSON('["plan", "apply", "init"]'), inputs.command) }}
       id: validate
@@ -175,7 +186,7 @@ runs:
         trap 'exit_code="$?"; echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"' EXIT
         args="${{ env.INPUTS_TOOL == 'tofu' && steps.arg.outputs.arg-var-file || '' }}${{ env.INPUTS_TOOL == 'tofu' && steps.arg.outputs.arg-var || '' }}${{ steps.arg.outputs.arg-no-tests }}${{ steps.arg.outputs.arg-test-directory }}"
         echo "$INPUTS_TOOL validate${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
-        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} validate${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
+        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} validate${args} 2>&1 | tee tf.console.txt
 
     - if: ${{ inputs.command == 'plan' }}
       id: plan
@@ -190,7 +201,7 @@ runs:
         args="${{ steps.arg.outputs.arg-destroy }}${{ steps.arg.outputs.arg-var-file }}${{ steps.arg.outputs.arg-var }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-detailed-exitcode }}${{ steps.arg.outputs.arg-generate-config-out }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-target }} -out=tfplan"
         echo "$INPUTS_TOOL plan${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
         if [[ -n "$INPUTS_PLAN_FILE" ]]; then mv --force --verbose "$INPUTS_PLAN_FILE" "$path" 2>/dev/null && exit 0; fi
-        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} plan${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
+        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} plan${args} 2>&1 | tee tf.console.txt
 
     - if: ${{ inputs.command == 'apply' && inputs.arg-auto-approve != 'true' && inputs.plan-file == '' }}
       id: download
@@ -200,13 +211,13 @@ runs:
       run: |
         # Download plan file.
         # Get the artifact ID of the latest matching plan files for download.
-        artifact_id=$(gh api /repos/${{ github.repository }}/actions/artifacts --header "$GH_API" --method GET --field "name=${{ steps.identifier.outputs.name }}" --jq '.artifacts[0].id' 2>/dev/null)
-        if [[ -z "$artifact_id" ]]; then echo "Unable to locate plan file: ${{ steps.identifier.outputs.name }}." && exit 1; fi
-        gh api /repos/${{ github.repository }}/actions/artifacts/${artifact_id}/zip --header "$GH_API" --method GET > "${{ steps.identifier.outputs.name }}.zip"
+        artifact_id=$(gh api /repos/$GH_REPO/actions/artifacts --header "$GH_API" --method GET --field "name=$GH_IDENTIFIER_NAME" --jq '.artifacts[0].id' 2>/dev/null)
+        if [[ -z "$artifact_id" ]]; then echo "Unable to locate plan file: $GH_IDENTIFIER_NAME." && exit 1; fi
+        gh api /repos/$GH_REPO/actions/artifacts/${artifact_id}/zip --header "$GH_API" --method GET > "$GH_IDENTIFIER_NAME.zip"
 
         # Unzip the plan file to the working directory, then clean up the zip file.
-        unzip "${{ steps.identifier.outputs.name }}.zip" -d "$INPUTS_ARG_CHDIR"
-        rm --force "${{ steps.identifier.outputs.name }}.zip"
+        unzip "$GH_IDENTIFIER_NAME.zip" -d "$INPUTS_ARG_CHDIR"
+        rm --force "$GH_IDENTIFIER_NAME.zip"
 
     - if: ${{ inputs.plan-encrypt != '' && steps.download.outcome == 'success' }}
       env:
@@ -256,7 +267,7 @@ runs:
 
     - if: ${{ inputs.command == 'plan' && inputs.upload-plan == 'true' && (github.server_url == 'https://github.com' || contains(github.server_url, '.ghe.com')) }}
       id: upload
-      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: ${{ steps.identifier.outputs.name }}
         path: ${{ format('{0}{1}tfplan{2}', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '', inputs.plan-encrypt != '' && '.encrypted' || '') }}
@@ -265,7 +276,7 @@ runs:
 
     - if: ${{ inputs.command == 'plan' && inputs.upload-plan == 'true' && !(github.server_url == 'https://github.com' || contains(github.server_url, '.ghe.com')) }}
       id: upload-v3
-      uses: actions/upload-artifact@c24449f33cd45d4826c6702db7e49f7cdb9b551d # v3.2.1-node20
+      uses: actions/upload-artifact@c6a366c94c3e0affe28c06c8df20a878f24da3cf # v3.2.2
       with:
         name: ${{ steps.identifier.outputs.name }}
         path: ${{ format('{0}{1}tfplan{2}', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '', inputs.plan-encrypt != '' && '.encrypted' || '') }}
@@ -316,15 +327,27 @@ runs:
         fi
         args="${{ steps.arg.outputs.arg-destroy }}${var_file}${var}${{ steps.arg.outputs.arg-backup }}${{ steps.arg.outputs.arg-compact-warnings }}${{ steps.arg.outputs.arg-concise }}${{ steps.arg.outputs.arg-lock-timeout }}${{ steps.arg.outputs.arg-lock }}${{ steps.arg.outputs.arg-parallelism }}${{ steps.arg.outputs.arg-refresh-only }}${{ steps.arg.outputs.arg-refresh }}${{ steps.arg.outputs.arg-replace }}${{ steps.arg.outputs.arg-state-out }}${{ steps.arg.outputs.arg-state }}${{ steps.arg.outputs.arg-target }}${plan}"
         echo "$INPUTS_TOOL apply${{ steps.arg.outputs.arg-chdir }}${args}" | sed 's/ -/\n -/g' > tf.command.txt
-        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} apply${args} 2> >(tee tf.console.txt) > >(tee tf.console.txt)
+        $INPUTS_TOOL${{ steps.arg.outputs.arg-chdir }} apply${args} 2>&1 | tee tf.console.txt
 
     - if: ${{ !cancelled() && steps.identifier.outcome == 'success' && contains(fromJSON('["plan", "apply", "init"]'), inputs.command) }}
       id: post
       env:
-        exitcode: ${{ steps.apply.outputs.exit_code || steps.plan.outputs.exit_code || steps.validate.outputs.exit_code || steps.initialize.outputs.exit_code || steps.format.outputs.exit_code }}
+        GH_ACTIONS_TOKEN: ${{ github.token }}
+        GH_EVENT_TIMESTAMP: ${{ github.event.pull_request.updated_at || github.event.comment.created_at || github.event.head_commit.timestamp || github.event.merge_group.head_commit.timestamp }}
         GH_MATRIX: ${{ toJSON(matrix) }}
+        GH_PR_NUMBER: ${{ steps.identifier.outputs.pr }}
+        GH_RUN_ATTEMPT: ${{ github.run_attempt }}
+        GH_RUN_ID: ${{ github.run_id }}
+        GH_SERVER_URL: ${{ github.server_url }}
+        GH_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
         INPUTS_COMMAND: ${{ inputs.command }}
         INPUTS_COMMENT_METHOD: ${{ inputs.comment-method }}
+        INPUTS_COMMENT_POS_1: ${{ inputs.comment-pos-1 }}
+        INPUTS_COMMENT_POS_2: ${{ inputs.comment-pos-2 }}
+        INPUTS_COMMENT_POS_3: ${{ inputs.comment-pos-3 }}
+        INPUTS_COMMENT_POS_4: ${{ inputs.comment-pos-4 }}
+        INPUTS_COMMENT_POS_5: ${{ inputs.comment-pos-5 }}
+        INPUTS_COMMENT_POS_6: ${{ inputs.comment-pos-6 }}
         INPUTS_COMMENT_PR: ${{ inputs.comment-pr }}
         INPUTS_EXPAND_DIFF: ${{ inputs.expand-diff }}
         INPUTS_EXPAND_SUMMARY: ${{ inputs.expand-summary }}
@@ -332,7 +355,7 @@ runs:
         INPUTS_PRESERVE_PLAN: ${{ inputs.preserve-plan }}
         INPUTS_SHOW_ARGS: ${{ inputs.show-args }}
         INPUTS_TAG_ACTOR: ${{ inputs.tag-actor }}
-        INPUTS_COMMENT_PREFIX: ${{ inputs.comment-prefix }}
+        exitcode: ${{ steps.apply.outputs.exit_code || steps.plan.outputs.exit_code || steps.validate.outputs.exit_code || steps.initialize.outputs.exit_code || steps.format.outputs.exit_code }}
         path: ${{ format('{0}{1}tfplan', inputs.arg-chdir || inputs.working-directory, (inputs.arg-chdir || inputs.working-directory) && '/' || '') }}
       shell: bash
       run: |
@@ -371,7 +394,7 @@ runs:
         if [[ "${{ steps.format.outcome }}" == "failure" ]]; then syntax="diff"; fi
 
         # List jobs from the current workflow run.
-        workflow_run=$(gh api /repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}/jobs --header "$GH_API" --method GET --paginate)
+        workflow_run=$(gh api /repos/$GH_REPO/actions/runs/$GH_RUN_ID/attempts/$GH_RUN_ATTEMPT/jobs --header "$GH_API" --method GET --paginate)
 
         # Get the current job ID from the workflow run using different query methods for matrix and regular jobs.
         if [[ "$GH_MATRIX" == "null" ]]; then
@@ -392,22 +415,23 @@ runs:
             echo "Waiting to locate job ID; will try again in $retry_interval seconds."
             sleep "$retry_interval"
             retry_interval=$((retry_interval * 2))
-            workflow_run=$(gh api /repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}/jobs --header "$GH_API" --method GET --paginate)
+            workflow_run=$(gh api /repos/$GH_REPO/actions/runs/$GH_RUN_ID/attempts/$GH_RUN_ATTEMPT/jobs --header "$GH_API" --method GET --paginate)
             job_id=$(echo "$workflow_run" | jq --raw-output --arg matrix "$matrix" '.jobs[] | select((.name | contains("(")) and ((.name | split("(")[1]) | rtrimstr(")") | rtrimstr("...") | inside($matrix))) | .id' | tail -n 1)
           done
         fi
         echo "job=$job_id" >> "$GITHUB_OUTPUT"
 
         # Add summary to the job status.
-        check_run=$(GH_TOKEN=${{ github.token }} gh api /repos/${{ github.repository }}/check-runs/${job_id} --header "$GH_API" --method PATCH --field "output[title]=${summary}" --field "output[summary]=${summary}")
+        check_run=$(GH_TOKEN=$GH_ACTIONS_TOKEN gh api /repos/$GH_REPO/check-runs/${job_id} --header "$GH_API" --method PATCH --field "output[title]=${summary}" --field "output[summary]=${summary}") || true
 
         # Get the step number that has status "in_progress" from the current job.
         workflow_step=$(echo "$workflow_run" | jq --raw-output --arg job_id "$job_id" '.jobs[] | select(.id == ($job_id | tonumber)) | .steps[] | select(.status == "in_progress") | .number')
 
         # From "check_run", echo "html_url".
-        check_url=$(echo "$check_run" | jq --raw-output '.html_url')
-        echo "check_id=$(echo "$check_run" | jq --raw-output '.id')" >> "$GITHUB_OUTPUT"
-        run_url=$(echo ${check_url}#step:${workflow_step}:1)
+        check_url=$(echo "$check_run" | jq --raw-output '.html_url // empty' 2>/dev/null) || true
+        echo "check_id=$(echo "$check_run" | jq --raw-output '.id // empty' 2>/dev/null)" >> "$GITHUB_OUTPUT"
+        run_url=${check_url:+${check_url}#step:${workflow_step}:1}
+        run_url=${run_url:-$GH_SERVER_URL/$GH_REPO/actions/runs/$GH_RUN_ID}
         echo "run_url=$run_url" >> "$GITHUB_OUTPUT"
 
         # If "tf.diff.txt" exists, display it within a "diff" block, truncated for character limit.
@@ -443,27 +467,26 @@ runs:
 
         # Collate body content.
         body=$(cat <<EOBODYTFVIAPR
-        ${INPUTS_COMMENT_PREFIX}
-        <!-- placeholder-1 -->
+        ${INPUTS_COMMENT_POS_1}
         \`\`\`fish
         ${command}
         \`\`\`
-        <!-- placeholder-2 -->
+        ${INPUTS_COMMENT_POS_2}
         ${diff}
-        <!-- placeholder-3 -->
+        ${INPUTS_COMMENT_POS_3}
         <details${{ env.INPUTS_EXPAND_SUMMARY == 'true' && ' open' || '' }}><summary>${summary}</br>
 
-        <!-- placeholder-4 -->
-        ###### By ${tag_actor}${{ github.triggering_actor }} at ${{ github.event.pull_request.updated_at || github.event.comment.created_at || github.event.head_commit.timestamp || github.event.merge_group.head_commit.timestamp }} [(view log)](${run_url}).
+        ${INPUTS_COMMENT_POS_4}
+        ###### By ${tag_actor}${GH_TRIGGERING_ACTOR} at ${GH_EVENT_TIMESTAMP} [(view log)](${run_url}).
         </summary>
 
         \`\`\`${syntax}
         ${console}
         \`\`\`
         </details>
-        <!-- placeholder-5 -->
-        <!-- ${{ steps.identifier.outputs.name }} -->
-        <!-- placeholder-6 -->
+        ${INPUTS_COMMENT_POS_5}
+        <!-- $GH_IDENTIFIER_NAME -->
+        ${INPUTS_COMMENT_POS_6}
         EOBODYTFVIAPR
         )
 
@@ -480,13 +503,13 @@ runs:
         rm --force tf.command.txt tf.console.txt tf.diff.txt
 
         # Exit early if there is no PR to comment on.
-        if [[ "${{ steps.identifier.outputs.pr }}" -eq 0 ]]; then
+        if [[ "$GH_PR_NUMBER" -eq 0 ]]; then
           exit 0
         fi
 
         # Check if the PR contains a bot comment with the same identifier.
-        list_comments=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method GET --paginate)
-        bot_comment=$(echo "$list_comments" | jq --raw-output --arg identifier "${{ steps.identifier.outputs.name }}" '.[] | select(.user.type == "Bot") | select(.body | contains($identifier)) | .id' | tail -n 1)
+        list_comments=$(gh api /repos/$GH_REPO/issues/$GH_PR_NUMBER/comments --header "$GH_API" --method GET --paginate)
+        bot_comment=$(echo "$list_comments" | jq --raw-output --arg identifier "$GH_IDENTIFIER_NAME" '.[] | select(.user.type == "Bot") | select(.body | contains($identifier)) | .id' | tail -n 1)
 
         # Determine if a PR comment should be created.
         if [[ "$INPUTS_COMMENT_PR" == "always" ]]; then
@@ -496,7 +519,7 @@ runs:
         elif [[ ("$INPUTS_COMMENT_PR" == "on-diff" || "$INPUTS_COMMENT_PR" == "on-change") && "$INPUTS_COMMAND" != "plan" && -n "$bot_comment" ]]; then
           create_comment="true"
         elif [[ ("$INPUTS_COMMENT_PR" == "on-diff" || "$INPUTS_COMMENT_PR" == "on-change") && "$exitcode" -eq 0 && -n "$bot_comment" ]]; then
-          gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method DELETE
+          gh api /repos/$GH_REPO/issues/comments/${bot_comment} --header "$GH_API" --method DELETE || true
           exit 0
         fi
 
@@ -509,18 +532,18 @@ runs:
         if [[ -n "$bot_comment" ]]; then
           if [[ "$INPUTS_COMMENT_METHOD" == "update" ]]; then
             # Update existing comment.
-            pr_comment=$(gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method PATCH --field "body=${body}")
-            echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id')" >> "$GITHUB_OUTPUT"
+            pr_comment=$(gh api /repos/$GH_REPO/issues/comments/${bot_comment} --header "$GH_API" --method PATCH --field "body=${body}") || true
+            echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id // empty' 2>/dev/null)" >> "$GITHUB_OUTPUT"
           elif [[ "$INPUTS_COMMENT_METHOD" == "recreate" ]]; then
             # Delete previous comment before posting a new one.
-            gh api /repos/${{ github.repository }}/issues/comments/${bot_comment} --header "$GH_API" --method DELETE
-            pr_comment=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method POST --field "body=${body}")
-            echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id')" >> "$GITHUB_OUTPUT"
+            gh api /repos/$GH_REPO/issues/comments/${bot_comment} --header "$GH_API" --method DELETE || true
+            pr_comment=$(gh api /repos/$GH_REPO/issues/$GH_PR_NUMBER/comments --header "$GH_API" --method POST --field "body=${body}") || true
+            echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id // empty' 2>/dev/null)" >> "$GITHUB_OUTPUT"
           fi
         else
           # Post new comment.
-          pr_comment=$(gh api /repos/${{ github.repository }}/issues/${{ steps.identifier.outputs.pr }}/comments --header "$GH_API" --method POST --field "body=${body}")
-          echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id')" >> "$GITHUB_OUTPUT"
+          pr_comment=$(gh api /repos/$GH_REPO/issues/$GH_PR_NUMBER/comments --header "$GH_API" --method POST --field "body=${body}") || true
+          echo "comment_id=$(echo "$pr_comment" | jq --raw-output '.id // empty' 2>/dev/null)" >> "$GITHUB_OUTPUT"
         fi
 
 outputs:
@@ -573,6 +596,30 @@ inputs:
   comment-method:
     default: "update"
     description: "PR comment by: `update` existing comment or `recreate` and delete previous one (e.g., `update`)."
+    required: false
+  comment-pos-1:
+    default: "<!-- comment-pos-1 -->"
+    description: "Markdown content to render at various positions in the PR comment (e.g., `Before command`)."
+    required: false
+  comment-pos-2:
+    default: "<!-- comment-pos-2 -->"
+    description: "Markdown content to render at various positions in the PR comment (e.g., `Before diff`)."
+    required: false
+  comment-pos-3:
+    default: "<!-- comment-pos-3 -->"
+    description: "Markdown content to render at various positions in the PR comment (e.g., `Before summary`)."
+    required: false
+  comment-pos-4:
+    default: "<!-- comment-pos-4 -->"
+    description: "Markdown content to render at various positions in the PR comment (e.g., `Before footer`)."
+    required: false
+  comment-pos-5:
+    default: "<!-- comment-pos-5 -->"
+    description: "Markdown content to render at various positions in the PR comment (e.g., `Before identifier`)."
+    required: false
+  comment-pos-6:
+    default: "<!-- comment-pos-6 -->"
+    description: "Markdown content to render at various positions in the PR comment (e.g., `After identifier`)."
     required: false
   comment-pr:
     default: "always"
@@ -645,10 +692,6 @@ inputs:
   working-directory:
     default: ""
     description: "Specify the working directory of TF code, alias of `arg-chdir` (e.g., `stacks/dev`)."
-    required: false
-  comment-prefix:
-    default: ""
-    description: "Prefix for the PR comment body (e.g., '# Terraform Plan for <environment>')."
     required: false
 
   # CLI arguments.

@@ -77,9 +77,7 @@ jobs:
           retention-days: 1
 
           comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
-          comment-placeholder-1: |
-            > [!NOTE]
-            > This is a placeholder comment.
+          comment-placeholder-1: "### This is a placeholder comment.\n\nAnd this one too."
           hide-args: detailed-exitcode,lock,out,refresh
           tag-actor: never
 

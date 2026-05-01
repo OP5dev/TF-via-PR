@@ -342,6 +342,7 @@ runs:
         GH_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
         INPUTS_COMMAND: ${{ inputs.command }}
         INPUTS_COMMENT_METHOD: ${{ inputs.comment-method }}
+        INPUTS_COMMENT_PLACEHOLDER_1: ${{ inputs.comment-placeholder-1 }}
         INPUTS_COMMENT_PR: ${{ inputs.comment-pr }}
         INPUTS_EXPAND_DIFF: ${{ inputs.expand-diff }}
         INPUTS_EXPAND_SUMMARY: ${{ inputs.expand-summary }}
@@ -461,7 +462,7 @@ runs:
 
         # Collate body content.
         body=$(cat <<EOBODYTFVIAPR
-        <!-- placeholder-1 -->
+        ${INPUTS_COMMENT_PLACEHOLDER_1}
         \`\`\`fish
         ${command}
         \`\`\`
@@ -590,6 +591,10 @@ inputs:
   comment-method:
     default: "update"
     description: "PR comment by: `update` existing comment or `recreate` and delete previous one (e.g., `update`)."
+    required: false
+  comment-placeholder-1:
+    default: ""
+    description: "Markdown content to render at various positions in the PR comment (e.g., TODO)."
     required: false
   comment-pr:
     default: "always"

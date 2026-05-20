@@ -500,9 +500,17 @@ runs:
 
         # Get the current job ID from the workflow run using different query methods for matrix and regular jobs.
         if [[ "$GH_MATRIX" == "null" ]]; then
-          # For regular jobs, get the ID of the job with the same name as job_id (lowercase and '-' or '_' replaced with ' ').
-          # Otherwise, get the ID of the first job in the list as a fallback.
-          job_id=$(echo "$workflow_run" | jq --raw-output '(.jobs[] | select((.name | ascii_downcase | gsub("-|_"; " ")) == (env.GITHUB_JOB | ascii_downcase | gsub("-|_"; " "))) | .id) // .jobs[0].id' | tail -n 1)
+          # For regular jobs:
+          # Primary: match by runner name (reliable for nested reusable workflows
+          # where the job display name differs from GITHUB_JOB due to a `name:`
+          # override or workflow hierarchy prefixes in the API response).
+          # Fallback 1: match by GITHUB_JOB name (original behavior).
+          # Fallback 2: first job in list (original fallback).
+          job_id=$(echo "$workflow_run" | jq --raw-output '
+            (.jobs[] | select(.runner_name == env.RUNNER_NAME and .status == "in_progress") | .id) //
+            (.jobs[] | select((.name | ascii_downcase | gsub("-|_"; " ")) == (env.GITHUB_JOB | ascii_downcase | gsub("-|_"; " "))) | .id) //
+            .jobs[0].id
+          ' | tail -n 1)
         else
           # For matrix jobs, join the matrix values with comma separator into a single string and get the ID of the job which contains it.
           matrix=$(echo "$GH_MATRIX" | jq --raw-output 'to_entries | map(if .value | type == "object" then (.value | to_entries[0].value) else .value end) | join(", ")')

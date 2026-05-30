@@ -45,7 +45,7 @@
 
 ### How to get started?
 
-```yaml
+```yml
 on:
   pull_request:
   push:
@@ -95,36 +95,36 @@ The following workflows showcase common use cases, while a comprehensive list of
 <table>
   <tr>
     <td>
-      <h4><a href="/.github/examples/pr_push_auth.yaml">#1 example ⤴</a></h4>
+      <h4><a href="/.github/examples/pr_push_auth.yml">#1 example ⤴</a></h4>
       <p>Runs on <code>pull_request</code> (plan) and <code>push</code> (apply) events with Terraform, AWS <strong>authentication</strong> and <strong>cache</strong>.</p>
       <br>
     </td>
     <td>
-      <h4><a href="/.github/examples/pr_merge_matrix.yaml">#2 example ⤴</a></h4>
+      <h4><a href="/.github/examples/pr_merge_matrix.yml">#2 example ⤴</a></h4>
       <p>Runs on <code>pull_request</code> (plan) and <code>merge_group</code> (apply) events with OpenTofu in <strong>matrix</strong> strategy.</p>
       <br>
     </td>
   </tr>
   <tr>
     <td>
-      <h4><a href="/.github/examples/pr_push_lint.yaml">#3 example ⤴</a></h4>
+      <h4><a href="/.github/examples/pr_push_lint.yml">#3 example ⤴</a></h4>
       <p>Runs on <code>pull_request</code> (plan) and <code>push</code> (apply) events with <strong>fmt/validate checks</strong> and TFLint.</p>
       <br>
     </td>
     <td>
-      <h4><a href="/.github/examples/pr_push_stages.yaml">#4 example ⤴</a></h4>
+      <h4><a href="/.github/examples/pr_push_stages.yml">#4 example ⤴</a></h4>
       <p>Runs on <code>pull_request</code> (plan) and <code>push</code> (apply) events with <strong>conditional jobs</strong> based on plan file.</p>
       <br>
     </td>
   </tr>
   <tr>
     <td>
-      <h4><a href="/.github/examples/pr_manual_label.yaml">#5 example ⤴</a></h4>
+      <h4><a href="/.github/examples/pr_manual_label.yml">#5 example ⤴</a></h4>
       <p>Runs on <code>labeled</code> and <code>workflow_dispatch</code> <strong>manual</strong> events on GitHub Enterprise (GHE) <strong>self-hosted runner</strong>.</p>
       <br>
     </td>
     <td>
-      <h4><a href="/.github/examples/schedule_refresh.yaml">#6 example ⤴</a></h4>
+      <h4><a href="/.github/examples/schedule_refresh.yml">#6 example ⤴</a></h4>
       <p>Runs on <code>schedule</code> <strong>cron</strong> event with <code>-refresh-only</code> to open an issue on <strong>configuration drift</strong>.</p>
       <br>
     </td>

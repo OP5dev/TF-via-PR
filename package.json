@@ -1,10 +1,22 @@
 {
   "name": "tf-via-pr",
-  "version": "0.0.0",
-  "private": true,
   "description": "Plan and apply Terraform/OpenTofu via PR automation.",
-  "author": "Rishav Dhar (@rdhar)",
+  "homepage": "https://github.com/op5dev/tf-via-pr",
+  "repository": "github:op5dev/tf-via-pr",
+  "type": "commonjs",
   "license": "Apache-2.0",
+  "private": true,
+  "author": {
+    "name": "Rishav Dhar",
+    "url": "https://www.rdhar.dev"
+  },
+  "bugs": {
+    "url": "https://github.com/op5dev/tf-via-pr/issues"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/op5dev"
+  },
   "engines": {
     "node": ">=24"
   },

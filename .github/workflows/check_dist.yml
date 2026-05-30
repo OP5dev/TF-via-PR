@@ -60,10 +60,4 @@ jobs:
         run: bun test
 
       - name: Build and verify dist is in sync
-        run: |
-          bun run build
-          if [ -n "$(git status --porcelain dist/)" ]; then
-            echo "::error::dist/ is out of sync with src/. Run 'bun run build' and commit the result."
-            git diff --stat -- dist/
-            exit 1
-          fi
+        run: bun run build:check

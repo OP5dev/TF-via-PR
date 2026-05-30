@@ -22,11 +22,10 @@
   },
   "scripts": {
     "build": "bun build src/main.ts --target=node --format=cjs --minify --sourcemap=none --outfile=dist/index.js",
-    "typecheck": "tsc --noEmit",
-    "test": "bun test",
+    "build:check": "bun run build && git diff --exit-code --stat -- dist/",
     "format": "bunx prettier --write src __tests__ package.json tsconfig.json",
     "format:check": "bunx prettier --check src __tests__ package.json tsconfig.json",
-    "check-dist": "bun run build && git diff --exit-code --stat -- dist/"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@actions/artifact": "6.2.1",

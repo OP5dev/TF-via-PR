@@ -1,0 +1,31 @@
+{
+  "name": "tf-via-pr",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Plan and apply Terraform/OpenTofu via PR automation.",
+  "author": "Rishav Dhar (@rdhar)",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "bun build src/main.ts --target=node --format=cjs --minify --sourcemap=none --outfile=dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "format": "bunx prettier --write src __tests__ package.json tsconfig.json",
+    "format:check": "bunx prettier --check src __tests__ package.json tsconfig.json",
+    "check-dist": "bun run build && git diff --exit-code --stat -- dist/"
+  },
+  "dependencies": {
+    "@actions/artifact": "6.2.1",
+    "@actions/core": "3.0.1",
+    "@actions/exec": "3.0.0",
+    "@actions/github": "9.1.1"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.14",
+    "@types/node": "22.19.19",
+    "prettier": "3.8.3",
+    "typescript": "6.0.3"
+  }
+}

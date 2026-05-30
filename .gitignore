@@ -1,0 +1,4 @@
+node_modules/
+*.log
+
+# Build output is committed (required for `using: node*` actions); never ignore dist/.

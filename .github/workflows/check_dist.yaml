@@ -1,0 +1,64 @@
+---
+name: Check dist
+
+# Node-runtime actions execute the committed `dist/` bundle, not `src/`. This
+# workflow type-checks and tests the source, rebuilds the bundle, and fails if
+# the committed `dist/` has drifted from `src/`.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - src/**
+      - dist/**
+      - package.json
+      - bun.lock
+      - tsconfig.json
+      - .github/workflows/check_dist.yaml
+  push:
+    branches: [main]
+    paths:
+      - src/**
+      - dist/**
+      - package.json
+      - bun.lock
+      - tsconfig.json
+
+permissions:
+  contents: read
+
+jobs:
+  check-dist:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.3.11
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Type-check
+        run: bun run typecheck
+
+      - name: Format check
+        run: bun run format:check
+
+      - name: Test
+        run: bun test
+
+      - name: Build and verify dist is in sync
+        run: |
+          bun run build
+          if [ -n "$(git status --porcelain dist/)" ]; then
+            echo "::error::dist/ is out of sync with src/. Run 'bun run build' and commit the result."
+            git diff --stat -- dist/
+            exit 1
+          fi

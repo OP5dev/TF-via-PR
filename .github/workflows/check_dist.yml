@@ -14,7 +14,7 @@ on:
       - package.json
       - bun.lock
       - tsconfig.json
-      - .github/workflows/check_dist.yaml
+      - .github/workflows/check_dist.yml
   push:
     branches: [main]
     paths:

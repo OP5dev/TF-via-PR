@@ -3,7 +3,7 @@ name: Test AWS
 
 on:
   pull_request: # Plan.
-    paths: [tests/aws/**, .github/workflows/test_aws.yaml]
+    paths: [tests/aws/**, .github/workflows/test_aws.yml]
     types: [opened, synchronize, reopened]
   merge_group: # Apply.
     types: [checks_requested]

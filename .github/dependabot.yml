@@ -11,7 +11,7 @@ updates:
       semver-minor-days: 2
       semver-patch-days: 2
 
-  - package-ecosystem: npm
+  - package-ecosystem: bun
     directory: /
     schedule:
       interval: daily

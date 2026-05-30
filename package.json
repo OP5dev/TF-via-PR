@@ -4,9 +4,9 @@
   "private": true,
   "description": "Plan and apply Terraform/OpenTofu via PR automation.",
   "author": "Rishav Dhar (@rdhar)",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "scripts": {
     "build": "bun build src/main.ts --target=node --format=cjs --minify --sourcemap=none --outfile=dist/index.js",

@@ -6,6 +6,10 @@ updates:
     directory: /
     schedule:
       interval: daily
+    groups:
+      cicd:
+        patterns:
+          - "*"
 
   - package-ecosystem: bun
     directory: /
@@ -16,9 +20,12 @@ updates:
       semver-minor-days: 2
       semver-patch-days: 2
     groups:
-      actions-toolkit:
+      bun-toolkit:
         patterns:
           - "@actions/*"
+      bun-dev:
+        patterns:
+          - "*"
 
   # - package-ecosystem: opentofu # https://github.com/opentofu/opentofu/issues/1236
   #   directories:

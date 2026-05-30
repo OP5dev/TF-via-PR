@@ -8,7 +8,7 @@ on:
     types: [opened, reopened, synchronize, closed]
 
 jobs:
-  ci:
+  CI:
     runs-on: ubuntu-24.04
 
     permissions:

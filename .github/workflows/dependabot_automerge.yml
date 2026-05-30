@@ -1,18 +1,20 @@
 ---
 name: Dependabot auto-merge
 
-on:
-  pull_request_target:
-    types: [opened, reopened, synchronize]
+# Auto-merge Dependabot PRs if checks pass. It only runs for PRs created by the
+# `dependabot[bot]` user.
+
+on: pull_request_target
 
 permissions:
   contents: write
   pull-requests: write
 
 jobs:
-  auto-merge:
+  Auto-merge:
     runs-on: ubuntu-24.04
     if: github.actor == 'dependabot[bot]'
+
     steps:
       - name: Enable auto-merge
         env:

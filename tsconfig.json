@@ -4,10 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "moduleDetection": "force",
-    "types": [
-      "bun",
-      "node"
-    ],
+    "types": ["bun", "node"],
     "strict": true,
     "noImplicitReturns": true,
     "noUnusedLocals": true,
@@ -23,12 +20,6 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": [
-    "src/**/*.ts",
-    "__tests__/**/*.ts"
-  ],
-  "exclude": [
-    "dist",
-    "node_modules"
-  ]
+  "include": ["src/**/*.ts", "__tests__/**/*.ts"],
+  "exclude": ["dist", "node_modules"]
 }

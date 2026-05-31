@@ -20,9 +20,9 @@ network: defaults
 safe-outputs:
   create-pull-request:
     draft: true
-    # Never let the agent edit generated/compiled artefacts; fall back to an
-    # issue if a change would require touching them.
-    protected-files: fallback-to-issue
+    # Allow edits to README.md and other docs; behavioural instructions below
+    # enforce the boundary on generated/compiled artefacts.
+    protected-files: none
 
 tools:
   github:
@@ -76,7 +76,7 @@ range) and identify changes that affect users:
   and note the minimum supported GitHub Enterprise Server version.
 - **Cross-references and anchors** must resolve; fix broken links and stale
   option names.
-- Keep `.github/examples/*.yml` consistent with documented inputs.
+- Flag in the PR description if `.github/examples/*.yml` needs updating; the safe-output policy blocks direct edits to `.github/`.
 
 ## Style
 
@@ -92,8 +92,8 @@ range) and identify changes that affect users:
   reviewable changes and a description that lists what changed and why
   (referencing the commits/inputs/outputs involved).
 - Keep the PR scoped to documentation. Do **not** modify code, tests, or
-  generated artefacts (`dist/**`, `bun.lock` are protected — if a doc fix would
-  require touching them, open an issue instead).
+  generated artefacts (`dist/**`, `bun.lock`); if a doc fix would require
+  touching them, open an issue instead.
 
 ## Rules & exit conditions
 

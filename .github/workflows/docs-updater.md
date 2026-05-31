@@ -22,7 +22,7 @@ safe-outputs:
     draft: true
     # Allow edits to README.md and other docs; behavioural instructions below
     # enforce the boundary on generated/compiled artefacts.
-    protected-files: none
+    protected-files: allowed
 
 tools:
   github:

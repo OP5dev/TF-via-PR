@@ -2,38 +2,34 @@
 version: 2
 
 updates:
-  - package-ecosystem: github-actions
-    directory: /
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
-      interval: daily
+      interval: "daily"
     groups:
       cicd:
-        patterns:
-          - "*"
+        patterns: ["*"]
 
-  - package-ecosystem: bun
-    directory: /
+  - package-ecosystem: "bun"
+    directory: "/"
     schedule:
-      interval: daily
+      interval: "daily"
     cooldown:
       semver-major-days: 3
       semver-minor-days: 2
       semver-patch-days: 2
     groups:
       bun-toolkit:
-        patterns:
-          - "@actions/*"
+        patterns: ["@actions/*"]
       bun-dev:
-        patterns:
-          - "*"
+        patterns: ["*"]
 
-  # - package-ecosystem: opentofu # https://github.com/opentofu/opentofu/issues/1236
-  #   directories:
-  #     - /sample/bucket
-  #     - /sample/instance
-  #   schedule:
-  #     interval: weekly
-  #   groups:
-  #     terraform:
-  #       patterns:
-  #         - "*"
+  - package-ecosystem: "opentofu"
+    directories:
+      - "/tests/aws/targets/dev"
+      - "/tests/aws/targets/stg"
+    schedule:
+      interval: "weekly"
+    groups:
+      tofu:
+        patterns: ["hashicorp/aws"]

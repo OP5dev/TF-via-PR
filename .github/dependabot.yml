@@ -1,0 +1,37 @@
+---
+version: 2
+
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    ignore:
+      - dependency-name: "github/gh-aw-actions/**" # Managed by gh aw compile. Version-locked to the gh-aw compiler; do not bump.
+    groups:
+      cicd:
+        patterns: ["*"]
+
+  - package-ecosystem: "bun"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    cooldown:
+      semver-major-days: 3
+      semver-minor-days: 2
+      semver-patch-days: 2
+    groups:
+      bun-toolkit:
+        patterns: ["@actions/*"]
+      bun-dev:
+        patterns: ["*"]
+
+  - package-ecosystem: "opentofu"
+    directories:
+      - "/tests/aws/targets/dev"
+      - "/tests/aws/targets/stg"
+    schedule:
+      interval: "weekly"
+    groups:
+      tofu:
+        patterns: ["hashicorp/aws"]

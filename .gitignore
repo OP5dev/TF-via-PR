@@ -1,0 +1,16 @@
+# Terraform
+**/.terraform/*
+*tfstate*
+*.tf
+*.tfplan
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+
+# Environment variables
+.env
+
+# dist/ # Build output is required for `using: node*` actions.

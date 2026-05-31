@@ -11,18 +11,18 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      actions: read        # Required to identify workflow run.
-      checks: write        # Required to add status summary.
-      contents: read       # Required to checkout repository.
-      id-token: write      # Required to authenticate via OIDC.
+      actions: read # Required to identify workflow run.
+      checks: write # Required to add status summary.
+      contents: read # Required to checkout repository.
+      id-token: write # Required to authenticate via OIDC.
       pull-requests: write # Required to add PR comment.
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Authenticate AWS
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-region: us-east-1
           role-to-assume: ${{ secrets.AWS_ROLE }}
@@ -39,7 +39,7 @@ jobs:
           key: cache-tf-${{ runner.os }}-${{ hashFiles('path/to/directory/.terraform.lock.hcl') }}
 
       - name: Setup TF
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           terraform_wrapper: false
 

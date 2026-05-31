@@ -4,11 +4,11 @@ name: Test CI
 on:
   workflow_dispatch:
   pull_request:
-    paths: [action.yml, tests/fail*/**, tests/pass*/**, .github/workflows/test_ci.yaml]
+    paths: [action.yml, tests/fail*/**, tests/pass*/**, .github/workflows/test_ci.yml]
     types: [opened, reopened, synchronize, closed]
 
 jobs:
-  ci:
+  CI:
     runs-on: ubuntu-24.04
 
     permissions:
@@ -38,20 +38,20 @@ jobs:
         run: echo "$GH_JSON"
 
       - name: Checkout repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
       - name: Setup Tofu
         if: matrix.tool == 'tofu'
-        uses: opentofu/setup-opentofu@000eeb8522f0572907c393e8151076c205fdba1b # v1.0.6
+        uses: opentofu/setup-opentofu@847eaa4afeb791b06daa46e8eafa8b1b68d7cfb4 # v2.0.1
         with:
           tofu_version: latest
           tofu_wrapper: false
 
       - name: Setup Terraform
         if: matrix.tool == 'terraform'
-        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
         with:
           terraform_version: latest
           terraform_wrapper: false
@@ -77,6 +77,7 @@ jobs:
           retention-days: 1
 
           comment-pr: ${{ matrix.tool == 'tofu' && 'always' || 'never' }}
+          comment-pos-1: ${{ contains(matrix.test, 'pass') && '> [!TIP]<br>Expected to `PASS`.' || '> [!IMPORTANT]<br>Expected to `FAIL`.' }}
           hide-args: detailed-exitcode,lock,out,refresh
           tag-actor: never
 

@@ -20,8 +20,10 @@ network: defaults
 safe-outputs:
   create-pull-request:
     draft: true
-    # Allow edits to README.md and other docs; behavioural instructions below
-    # enforce the boundary on generated/compiled artefacts.
+    # 'fallback-to-issue' includes README.md in its default protected-file
+    # list (visible in the compiled lock), blocking this workflow's primary
+    # output. 'allowed' permits README edits; the prompt instructions below
+    # enforce the boundary on package manifests and non-doc files.
     protected-files: allowed
 
 tools:
@@ -49,8 +51,9 @@ something to fix, not to defer.
 
 ## What to analyse
 
-On each push to the default branch, examine the diff (`git diff` for the pushed
-range) and identify changes that affect users:
+On each push to the default branch, examine the diff using the GitHub API —
+compare `${{ github.event.before }}` to `${{ github.sha }}` — and identify
+changes that affect users:
 
 1. **`action.yml`** — the source of truth for the public contract:
    - Added/removed/renamed **inputs** or **outputs**, or changed **defaults**

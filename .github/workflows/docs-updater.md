@@ -22,8 +22,7 @@ safe-outputs:
     draft: true
     # Never let the agent edit generated/compiled artefacts; fall back to an
     # issue if a change would require touching them.
-    protected-files: [dist/**, bun.lock]
-    labels: [documentation, automation]
+    protected-files: fallback-to-issue
 
 tools:
   github:

@@ -52,7 +52,7 @@ something to fix, not to defer.
 ## What to analyse
 
 On each push to the default branch, examine the diff using the GitHub API —
-compare `${{ github.event.before }}` to `${{ github.sha }}` — and identify
+compare `${{ github.event.before }}` to `${{ github.event.after }}` — and identify
 changes that affect users:
 
 1. **`action.yml`** — the source of truth for the public contract:

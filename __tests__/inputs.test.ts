@@ -98,3 +98,34 @@ describe("getInputs validation", () => {
     expect(getInputs().tagActor).toBe("on-diff");
   });
 });
+
+describe("getInputs: unset vs. explicit empty", () => {
+  test("hide-args/show-args fall back to their action.yml defaults when unset", () => {
+    const inputs = getInputs();
+    expect(inputs.hideArgs).toEqual([
+      "detailed-exitcode",
+      "parallelism",
+      "lock",
+      "out",
+      "var=",
+    ]);
+    expect(inputs.showArgs).toEqual(["workspace"]);
+  });
+
+  test("an explicit empty value overrides a non-empty default (not treated as unset)", () => {
+    // Boolean: explicit "" must be false, not the `true` default.
+    setInputs({ "arg-check": "" });
+    expect(getInputs().args.check).toBe(false);
+    // List: explicit "" must clear the default, not fall back to it.
+    setInputs({ "arg-check": "", "hide-args": "" });
+    expect(getInputs().hideArgs).toEqual([]);
+  });
+
+  test("an empty enum input coalesces to its default rather than throwing", () => {
+    setInputs({ "comment-pr": "", "comment-method": "", tool: "" });
+    const inputs = getInputs();
+    expect(inputs.commentPr).toBe("always");
+    expect(inputs.commentMethod).toBe("update");
+    expect(inputs.tool).toBe("terraform");
+  });
+});

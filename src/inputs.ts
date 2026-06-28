@@ -106,32 +106,62 @@ export interface ActionInputs {
 
 // ── input readers (faithful to the composite action's bash semantics) ─────────
 
-/** Trimmed string input, or `fallback` when unset. */
+/**
+ * The trimmed raw input, or `undefined` when the input is genuinely unset.
+ *
+ * `core.getInput()` collapses "unset" and "explicitly empty" to `""`, which
+ * would prevent a user from overriding a defaulted input back to empty and would
+ * make `""` booleans fall back to their default instead of evaluating to false.
+ * Reading `INPUT_*` directly preserves the distinction: at runtime the runner
+ * injects the `action.yml` default only when the input is omitted, so an
+ * explicit empty value arrives as `""` and is respected — matching the composite
+ * action's bash semantics, which read the env var verbatim.
+ */
+function rawInput(name: string): string | undefined {
+  const value = process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`];
+  return value === undefined ? undefined : value.trim();
+}
+
+/** String input, falling back to `fallback` only when the input is unset. */
 function str(name: string, fallback = ""): string {
-  const value = core.getInput(name);
-  return value !== "" ? value : fallback;
+  return rawInput(name) ?? fallback;
 }
 
 /**
  * Boolean input matching the bash `[[ "${X,,}" == "true" ]]` semantics: only a
- * case-insensitive "true" is true; everything else (including "") is false.
- * Deliberately not `core.getBooleanInput`, which throws on non-boolean values.
+ * case-insensitive "true" is true; everything else (including an explicit "") is
+ * false. The `fallback` applies only when the input is unset. Deliberately not
+ * `core.getBooleanInput`, which throws on non-boolean values.
  */
 function bool(name: string, fallback: boolean): boolean {
-  const raw = core.getInput(name);
-  return (raw !== "" ? raw : String(fallback)).toLowerCase() === "true";
+  return (rawInput(name) ?? String(fallback)).toLowerCase() === "true";
 }
 
-/** Comma-separated input split into trimmed, non-empty values. */
-function list(name: string): string[] {
-  return str(name)
+/**
+ * Comma-separated input split into trimmed, non-empty values, falling back to
+ * `fallback` only when the input is unset (an explicit "" yields `[]`).
+ */
+function list(name: string, fallback: string[] = []): string[] {
+  const raw = rawInput(name);
+  if (raw === undefined) return fallback;
+  return raw
     .split(",")
     .map((item) => item.trim())
     .filter((item) => item !== "");
 }
 
+/**
+ * Enum input: like `str`, but an explicit empty value also falls back to
+ * `fallback`. An empty string is not a valid enum option, and the composite
+ * action treated it as a benign no-op (matching none of its branches) rather
+ * than an error — so coalescing empty to the default preserves that behaviour.
+ */
+function enumInput(name: string, fallback: string): string {
+  return str(name, fallback) || fallback;
+}
+
 function parseTool(): Tool {
-  const value = str("tool", "terraform");
+  const value = enumInput("tool", "terraform");
   if (value !== "terraform" && value !== "tofu") {
     throw new Error(
       `Invalid 'tool' input: '${value}'. Expected 'terraform' or 'tofu'.`,
@@ -156,7 +186,7 @@ function parseCommand(): Command {
 }
 
 function parseCommentMethod(): CommentMethod {
-  const value = str("comment-method", "update");
+  const value = enumInput("comment-method", "update");
   if (value !== "update" && value !== "recreate") {
     throw new Error(
       `Invalid 'comment-method' input: '${value}'. Expected 'update' or 'recreate'.`,
@@ -171,7 +201,7 @@ function parseCommentMethod(): CommentMethod {
  * retired to remove ambiguity.
  */
 function parseCommentPr(): CommentPr {
-  let value = str("comment-pr", "always");
+  let value = enumInput("comment-pr", "always");
   if (value === "on-change") {
     core.warning(
       "Input 'comment-pr: on-change' is deprecated; use 'on-diff'. Treating as 'on-diff'.",
@@ -188,7 +218,7 @@ function parseCommentPr(): CommentPr {
 
 /** `always`/`true` and `on-diff`/`on-change` aliases are preserved for tag-actor. */
 function parseTagActor(): TagActor {
-  const value = str("tag-actor", "always");
+  const value = enumInput("tag-actor", "always");
   if (value === "always" || value === "true") return "always";
   if (value === "on-diff" || value === "on-change") return "on-diff";
   if (value === "never") return "never";
@@ -265,8 +295,14 @@ export function getInputs(): ActionInputs {
     ],
     expandDiff: bool("expand-diff", false),
     expandSummary: bool("expand-summary", false),
-    hideArgs: list("hide-args"),
-    showArgs: list("show-args"),
+    hideArgs: list("hide-args", [
+      "detailed-exitcode",
+      "parallelism",
+      "lock",
+      "out",
+      "var=",
+    ]),
+    showArgs: list("show-args", ["workspace"]),
     tagActor: parseTagActor(),
     prNumber: str("pr-number"),
     token: str("token"),

@@ -13,11 +13,11 @@ import { getInputs } from "./inputs";
  */
 async function run(): Promise<void> {
   const inputs = getInputs();
-  core.debug(
-    `Parsed inputs for tool '${inputs.tool}', command '${inputs.command || "(none)"}'.`,
-  );
-  core.debug(`TF environment: ${JSON.stringify(buildTFEnv(inputs))}`);
 
+  // Debug logging is intentionally non-sensitive: argv tokens (e.g. `-var=...`)
+  // and environment values can carry secrets and may surface in workflow logs
+  // when runner debugging is enabled, so log only summaries — the subcommand,
+  // the argv token count, and the environment variable names (never values).
   const subcommands: Subcommand[] = [
     "init",
     "validate",
@@ -25,10 +25,14 @@ async function run(): Promise<void> {
     "plan",
     "apply",
   ];
+  core.debug(
+    `Parsed inputs for tool '${inputs.tool}', command '${inputs.command || "(none)"}'.`,
+  );
+  core.debug(
+    `TF environment variables: ${Object.keys(buildTFEnv(inputs)).join(", ")}.`,
+  );
   for (const sub of subcommands) {
-    core.debug(
-      `argv[${sub}]: ${JSON.stringify([inputs.tool, ...buildArgv(inputs, sub)])}`,
-    );
+    core.debug(`argv[${sub}]: ${buildArgv(inputs, sub).length} tokens.`);
   }
 }
 

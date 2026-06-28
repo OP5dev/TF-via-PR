@@ -174,13 +174,17 @@ export class GitHubClient {
     return matched?.number ?? prs[0]?.number ?? 0;
   }
 
-  /** PR number for an open PR with the given head ref, or 0. */
-  async findPrByHeadRef(headRef: string): Promise<number> {
-    if (headRef === "") return 0;
+  /**
+   * PR number for an open PR with the given qualified head, or 0. `headLabel`
+   * must be the `owner:branch` form (GitHub's `head` filter is qualified);
+   * passing a bare branch can match the wrong PR or none for fork PRs.
+   */
+  async findPrByHeadRef(headLabel: string): Promise<number> {
+    if (headLabel === "") return 0;
     const { data } = await this.octokit.rest.pulls.list({
       owner: this.owner,
       repo: this.repo,
-      head: headRef,
+      head: headLabel,
       state: "open",
       per_page: 1,
     });

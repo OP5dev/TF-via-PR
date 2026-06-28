@@ -12,7 +12,7 @@ function makeCtx(overrides: Partial<ActionContext> = {}): ActionContext {
     eventName: "pull_request",
     sha: "abc123",
     refName: "feature",
-    headRef: "feature",
+    headLabel: "op5dev:feature",
     workflowRunHeadBranch: "",
     eventPrNumber: 0,
     checkRunId: 0,
@@ -54,7 +54,10 @@ describe("getContext", () => {
         GITHUB_RUN_ID: "42",
       } as NodeJS.ProcessEnv,
       {
-        pull_request: { number: 123, head: { sha: "headsha", ref: "feat-x" } },
+        pull_request: {
+          number: 123,
+          head: { sha: "headsha", ref: "feat-x", label: "op5dev:feat-x" },
+        },
       },
     );
     expect(ctx.owner).toBe("op5dev");
@@ -62,7 +65,23 @@ describe("getContext", () => {
     expect(ctx.eventPrNumber).toBe(123);
     expect(ctx.checkRunId).toBe(987654);
     expect(ctx.sha).toBe("headsha"); // pull_request head sha wins over GITHUB_SHA
+    expect(ctx.headLabel).toBe("op5dev:feat-x"); // qualified label, not bare branch
     expect(ctx.runId).toBe(42);
+  });
+
+  test("prefers workflow_run.head_sha and falls back to a qualified head", () => {
+    const ctx = getContext(
+      {
+        GITHUB_REPOSITORY: "op5dev/tf-via-pr",
+        GITHUB_EVENT_NAME: "workflow_run",
+        GITHUB_SHA: "merge-sha",
+        GITHUB_REF_NAME: "feat-x",
+      } as NodeJS.ProcessEnv,
+      { workflow_run: { head_sha: "wf-head-sha", head_branch: "feat-x" } },
+    );
+    expect(ctx.sha).toBe("wf-head-sha"); // workflow_run.head_sha wins over GITHUB_SHA
+    expect(ctx.workflowRunHeadBranch).toBe("feat-x");
+    expect(ctx.headLabel).toBe("feat-x"); // no PR payload -> branch name fallback
   });
 
   test("check_run_id defaults to 0 when GH_CHECK_RUN_ID is absent", () => {
@@ -118,18 +137,18 @@ describe("resolvePrNumber", () => {
   test("falls back to a head-ref lookup when the payload has no PR number", async () => {
     const { calls, lookups } = spyLookups(0, 12);
     const n = await resolvePrNumber(
-      makeCtx({ eventPrNumber: 0, headRef: "feat-y" }),
+      makeCtx({ eventPrNumber: 0, headLabel: "op5dev:feat-y" }),
       0,
       lookups,
     );
     expect(n).toBe(12);
-    expect(calls).toEqual(["byHeadRef:feat-y"]);
+    expect(calls).toEqual(["byHeadRef:op5dev:feat-y"]);
   });
 
   test("returns 0 (no PR) when nothing resolves", async () => {
     const { lookups } = spyLookups();
     const n = await resolvePrNumber(
-      makeCtx({ eventPrNumber: 0, headRef: "" }),
+      makeCtx({ eventPrNumber: 0, headLabel: "" }),
       0,
       lookups,
     );

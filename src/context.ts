@@ -25,8 +25,12 @@ export interface ActionContext {
   sha: string;
   /** `GITHUB_REF_NAME`. */
   refName: string;
-  /** Head ref for PR lookup (`pull_request.head.ref` / `head_ref`). */
-  headRef: string;
+  /**
+   * Qualified head for the `pulls` list `head` filter: `pull_request.head.label`
+   * ("owner:branch") when available, else the branch name. The qualified form is
+   * required for fork PRs, where a bare branch can match the wrong PR or none.
+   */
+  headLabel: string;
   /** `workflow_run.head_branch`, when triggered by `workflow_run`. */
   workflowRunHeadBranch: string;
   /** PR number from the event payload (`number`/`issue.number`), or 0. */
@@ -54,6 +58,9 @@ export function getContext(
   payload: typeof github.context.payload = github.context.payload,
 ): ActionContext {
   const [owner = "", repo = ""] = (env.GITHUB_REPOSITORY ?? "").split("/");
+  const workflowRun = (
+    payload as { workflow_run?: { head_branch?: string; head_sha?: string } }
+  ).workflow_run;
   const eventPrNumber =
     intEnv(payload.pull_request?.number?.toString()) ||
     intEnv(payload.issue?.number?.toString()) ||
@@ -63,12 +70,19 @@ export function getContext(
     owner,
     repo,
     eventName: env.GITHUB_EVENT_NAME ?? "",
-    sha: payload.pull_request?.head?.sha ?? env.GITHUB_SHA ?? "",
+    sha:
+      payload.pull_request?.head?.sha ??
+      workflowRun?.head_sha ??
+      env.GITHUB_SHA ??
+      "",
     refName: env.GITHUB_REF_NAME ?? "",
-    headRef: payload.pull_request?.head?.ref ?? env.GITHUB_HEAD_REF ?? "",
-    workflowRunHeadBranch:
-      (payload as { workflow_run?: { head_branch?: string } }).workflow_run
-        ?.head_branch ?? "",
+    headLabel:
+      payload.pull_request?.head?.label ??
+      env.GITHUB_REF_NAME ??
+      env.GITHUB_HEAD_REF ??
+      env.GITHUB_REF ??
+      "",
+    workflowRunHeadBranch: workflowRun?.head_branch ?? "",
     eventPrNumber,
     checkRunId: intEnv(env.GH_CHECK_RUN_ID),
     runId: intEnv(env.GITHUB_RUN_ID),
@@ -124,6 +138,6 @@ export async function resolvePrNumber(
   }
 
   if (ctx.eventPrNumber > 0) return ctx.eventPrNumber;
-  if (ctx.headRef !== "") return lookups.byHeadRef(ctx.headRef);
+  if (ctx.headLabel !== "") return lookups.byHeadRef(ctx.headLabel);
   return 0;
 }

@@ -43,6 +43,12 @@ export interface RunOptions {
   okCodes?: number[];
   /** When true, never throw on a non-zero exit (e.g. `fmt -check`). */
   allowAnyExitCode?: boolean;
+  /**
+   * Interpret exit code 2 as "changes present" (`plan -detailed-exitcode`),
+   * setting `TFResult.hasChanges`. Only `runPlan` sets this; for every other
+   * command a 2 has no special meaning and `hasChanges` stays false.
+   */
+  detectChanges?: boolean;
   /** Secret values to redact from the stored `command` (and error message). */
   secrets?: string[];
   /** Suppress live echo to the Actions log. Output is still captured. */
@@ -111,10 +117,16 @@ export async function runTF(
     throw new TFError(tool, command, exitCode, scrub(stderr, options.secrets));
   }
 
-  return { exitCode, stdout, stderr, hasChanges: exitCode === 2, command };
+  const hasChanges = (options.detectChanges ?? false) && exitCode === 2;
+  return { exitCode, stdout, stderr, hasChanges, command };
 }
 
-/** Secrets that must never appear in logs or the PR comment. */
+/**
+ * Sensitive values to redact from the stored `command` and `TFError` message.
+ * This does NOT mask the live `@actions/exec` log stream — that relies on the
+ * caller registering these values with `core.setSecret` (done when inputs are
+ * parsed / the action is wired up), which masks them everywhere in the log.
+ */
 function secretsOf(inputs: ActionInputs): string[] {
   return [inputs.planEncrypt, inputs.token].filter((value) => value !== "");
 }
@@ -145,6 +157,7 @@ export function runPlan(inputs: ActionInputs): Promise<TFResult> {
   return runTF(inputs.tool, buildArgv(inputs, "plan"), {
     ...baseOptions(inputs),
     okCodes: [0, 2],
+    detectChanges: true,
   });
 }
 

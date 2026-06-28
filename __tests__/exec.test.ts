@@ -6,12 +6,13 @@ import type { ActionInputs, TFArgs } from "../src/inputs";
  * pushes configurable output to the listeners, and returns a configurable exit
  * code, so tests drive exit-code policy and stream capture without a real binary.
  */
-let lastCall: { cmd: string; args: string[]; opts: exectype } | null = null;
+let lastCall: { cmd: string; args: string[]; opts: MockExecOptions } | null =
+  null;
 let nextExit = 0;
 let stdoutChunk = "";
 let stderrChunk = "";
 
-interface exectype {
+interface MockExecOptions {
   cwd?: string;
   env?: Record<string, string>;
   silent?: boolean;
@@ -19,12 +20,14 @@ interface exectype {
   listeners?: { stdout?: (b: Buffer) => void; stderr?: (b: Buffer) => void };
 }
 
-const execMock = mock(async (cmd: string, args: string[], opts: exectype) => {
-  lastCall = { cmd, args, opts };
-  if (stdoutChunk !== "") opts.listeners?.stdout?.(Buffer.from(stdoutChunk));
-  if (stderrChunk !== "") opts.listeners?.stderr?.(Buffer.from(stderrChunk));
-  return nextExit;
-});
+const execMock = mock(
+  async (cmd: string, args: string[], opts: MockExecOptions) => {
+    lastCall = { cmd, args, opts };
+    if (stdoutChunk !== "") opts.listeners?.stdout?.(Buffer.from(stdoutChunk));
+    if (stderrChunk !== "") opts.listeners?.stderr?.(Buffer.from(stderrChunk));
+    return nextExit;
+  },
+);
 
 mock.module("@actions/exec", () => ({ exec: execMock }));
 
@@ -111,15 +114,23 @@ function makeInputs(
 }
 
 describe("runTF exit-code policy", () => {
-  test("plan -detailed-exitcode exit 2 is success with hasChanges true", async () => {
+  test("plan -detailed-exitcode exit 2 with detectChanges is success + hasChanges", async () => {
     nextExit = 2;
     stdoutChunk = "Plan: 1 to add, 0 to change, 0 to destroy.";
     const result = await runTF("terraform", ["plan", "-detailed-exitcode"], {
       okCodes: [0, 2],
+      detectChanges: true,
     });
     expect(result.exitCode).toBe(2);
     expect(result.hasChanges).toBe(true);
     expect(result.stdout).toContain("Plan: 1 to add");
+  });
+
+  test("exit 2 without detectChanges does not set hasChanges", async () => {
+    nextExit = 2;
+    const result = await runTF("terraform", ["validate"], { okCodes: [0, 2] });
+    expect(result.exitCode).toBe(2);
+    expect(result.hasChanges).toBe(false);
   });
 
   test("exit code outside okCodes throws TFError", async () => {

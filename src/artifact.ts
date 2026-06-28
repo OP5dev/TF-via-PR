@@ -14,12 +14,12 @@ import type { ActionInputs } from "./inputs";
  * Plan-artifact naming, upload, and download (Phase 4 of the TypeScript
  * migration). Replaces the composite action's `md5sum` naming, the nested
  * `upload-artifact` step, and the `gh api .../zip` + `unzip` download, using
- * `@actions/artifact` v2 and `node:crypto`.
+ * the `@actions/artifact` client and `node:crypto`.
  *
- * `@actions/artifact` v2 derives its service URL/token from the runner
+ * `@actions/artifact` derives its service URL/token from the runner
  * environment, so github.com, `*.ghe.com` (incl. EU residency), and GHES with
- * the artifact backend all work with no extra configuration — which is why the
- * old v3-vs-v7 upload split is gone (Q2).
+ * the new artifact backend all work with no extra configuration — which is why
+ * the old `upload-artifact` v3-vs-v7 split is gone (Q2).
  */
 
 /** The single file stored inside the artifact (content encrypted when a passphrase is set). */

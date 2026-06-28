@@ -20,6 +20,9 @@ const state = {
   createId: 0,
   updateId: 0,
   checksThrows: false,
+  createThrows: false,
+  updateThrows: false,
+  deleteThrows: false,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -28,14 +31,17 @@ const rest: any = {
     listComments: () => {},
     updateComment: async (p: { comment_id: number }) => {
       state.calls.push(`update:${p.comment_id}`);
+      if (state.updateThrows) throw new Error("update failed");
       return { data: { id: state.updateId } };
     },
     createComment: async (p: { issue_number: number }) => {
       state.calls.push(`create:${p.issue_number}`);
+      if (state.createThrows) throw new Error("create failed");
       return { data: { id: state.createId } };
     },
     deleteComment: async (p: { comment_id: number }) => {
       state.calls.push(`delete:${p.comment_id}`);
+      if (state.deleteThrows) throw new Error("delete failed");
     },
   },
   checks: {
@@ -96,6 +102,9 @@ beforeEach(() => {
   state.createId = 0;
   state.updateId = 0;
   state.checksThrows = false;
+  state.createThrows = false;
+  state.updateThrows = false;
+  state.deleteThrows = false;
 });
 
 describe("upsertComment", () => {
@@ -156,6 +165,47 @@ describe("upsertComment", () => {
       method: "update",
     });
     expect(result.action).toBe("created");
+  });
+
+  test("swallows a create failure and returns { id: 0, action: 'failed' }", async () => {
+    state.createThrows = true;
+    const result = await client().upsertComment({
+      prNumber: 7,
+      marker,
+      body: "b",
+      method: "update",
+    });
+    expect(result).toEqual({ id: 0, action: "failed" });
+  });
+
+  test("swallows an update failure rather than throwing", async () => {
+    state.comments = [
+      { id: 5, user: { type: "Bot" }, body: `<!-- ${marker} -->` },
+    ];
+    state.updateThrows = true;
+    const result = await client().upsertComment({
+      prNumber: 7,
+      marker,
+      body: "b",
+      method: "update",
+    });
+    expect(result).toEqual({ id: 0, action: "failed" });
+  });
+
+  test("recreate still creates when the delete fails", async () => {
+    state.comments = [
+      { id: 5, user: { type: "Bot" }, body: `<!-- ${marker} -->` },
+    ];
+    state.deleteThrows = true;
+    state.createId = 99;
+    const result = await client().upsertComment({
+      prNumber: 7,
+      marker,
+      body: "b",
+      method: "recreate",
+    });
+    expect(result).toEqual({ id: 99, action: "recreated" });
+    expect(state.calls).toEqual(["delete:5", "create:7"]);
   });
 });
 

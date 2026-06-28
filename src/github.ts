@@ -23,8 +23,13 @@ export interface UpsertCommentArgs {
 }
 
 export interface UpsertResult {
+  /** The comment id, or 0 when the operation failed (best-effort). */
   id: number;
-  action: "created" | "updated" | "recreated";
+  action: "created" | "updated" | "recreated" | "failed";
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 /**
@@ -50,31 +55,50 @@ export class GitHubClient {
    * Finds the most recent Bot-authored comment whose body contains the marker;
    * `update` edits it in place, `recreate` deletes and re-posts, and a missing
    * comment is created. Returns the comment id and which action was taken.
+   *
+   * Best-effort, matching the composite action's `|| true` on comment ops: a
+   * transient API failure is warned and swallowed (returning `{ id: 0, action:
+   * "failed" }`) rather than failing the whole run. A failed delete in the
+   * `recreate` path still proceeds to create.
    */
   async upsertComment(args: UpsertCommentArgs): Promise<UpsertResult> {
-    const existing = await this.findMarkerComment(args.prNumber, args.marker);
+    try {
+      const existing = await this.findMarkerComment(args.prNumber, args.marker);
 
-    if (existing !== null && args.method === "update") {
-      const { data } = await this.octokit.rest.issues.updateComment({
+      if (existing !== null && args.method === "update") {
+        const { data } = await this.octokit.rest.issues.updateComment({
+          owner: this.owner,
+          repo: this.repo,
+          comment_id: existing,
+          body: args.body,
+        });
+        return { id: data.id, action: "updated" };
+      }
+
+      if (existing !== null && args.method === "recreate") {
+        try {
+          await this.deleteComment(existing);
+        } catch (error) {
+          core.warning(
+            `Unable to delete previous PR comment ${existing}: ${errorMessage(error)}`,
+          );
+        }
+      }
+
+      const { data } = await this.octokit.rest.issues.createComment({
         owner: this.owner,
         repo: this.repo,
-        comment_id: existing,
+        issue_number: args.prNumber,
         body: args.body,
       });
-      return { id: data.id, action: "updated" };
+      return {
+        id: data.id,
+        action: existing !== null ? "recreated" : "created",
+      };
+    } catch (error) {
+      core.warning(`Unable to upsert PR comment: ${errorMessage(error)}`);
+      return { id: 0, action: "failed" };
     }
-
-    if (existing !== null && args.method === "recreate") {
-      await this.deleteComment(existing);
-    }
-
-    const { data } = await this.octokit.rest.issues.createComment({
-      owner: this.owner,
-      repo: this.repo,
-      issue_number: args.prNumber,
-      body: args.body,
-    });
-    return { id: data.id, action: existing !== null ? "recreated" : "created" };
   }
 
   /** Id of the latest Bot comment containing `marker`, or null if none. */
@@ -129,9 +153,7 @@ export class GitHubClient {
       return result;
     } catch (error) {
       core.warning(
-        `Unable to update check run ${checkRunId} (is 'checks: write' granted?): ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        `Unable to update check run ${checkRunId} (is 'checks: write' granted?): ${errorMessage(error)}`,
       );
       return {};
     }

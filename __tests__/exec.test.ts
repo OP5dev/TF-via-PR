@@ -172,6 +172,18 @@ describe("runTF invocation safety", () => {
     expect(result.command).not.toContain("s3cr3t");
   });
 
+  test("quotes only the argv tokens that contain whitespace/metacharacters", async () => {
+    const result = await runTF("terraform", [
+      "plan",
+      "-var=name=hello world",
+      "-input=false",
+    ]);
+    // safe tokens stay bare; the one with a space is single-quoted and copy-pasteable
+    expect(result.command).toBe(
+      "terraform plan '-var=name=hello world' -input=false",
+    );
+  });
+
   test("merges env over process.env and forwards cwd", async () => {
     await runTF("terraform", ["init"], {
       cwd: "/work",

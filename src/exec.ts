@@ -78,6 +78,23 @@ function scrub(text: string, secrets: readonly string[] = []): string {
 }
 
 /**
+ * Render an argv token for the human-readable `command` string. Shell-safe
+ * tokens are left as-is; anything containing whitespace, quotes, or other shell
+ * metacharacters is POSIX single-quoted so the rendered command is unambiguous
+ * and copy/pasteable. This only affects display — the real argv passed to
+ * `@actions/exec` is always the untouched `string[]`.
+ */
+function quoteArg(token: string): string {
+  if (token !== "" && /^[A-Za-z0-9_@%+=:,./-]+$/.test(token)) return token;
+  return `'${token.split("'").join(`'\\''`)}'`;
+}
+
+/** Join the binary and argv into a single, unambiguous display string. */
+function renderCommand(tool: Tool, argv: string[]): string {
+  return [tool, ...argv].map(quoteArg).join(" ");
+}
+
+/**
  * Run a terraform/tofu command. Captures stdout/stderr in real time (streamed
  * to the Actions log and accumulated for parsing), applies the exit-code policy,
  * and returns a {@link TFResult}. Binary-agnostic: identical for `terraform` and
@@ -89,7 +106,7 @@ export async function runTF(
   options: RunOptions = {},
 ): Promise<TFResult> {
   const okCodes = options.okCodes ?? [0];
-  const command = scrub([tool, ...argv].join(" "), options.secrets);
+  const command = scrub(renderCommand(tool, argv), options.secrets);
 
   let stdout = "";
   let stderr = "";

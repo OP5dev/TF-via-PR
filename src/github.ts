@@ -177,7 +177,12 @@ export class GitHubClient {
     });
     const artifact = data.artifacts[0];
     if (artifact === undefined) return null;
-    return { id: artifact.id, workflowRunId: artifact.workflow_run?.id ?? 0 };
+    // A cross-run download is unusable without the source run id; treat an
+    // artifact missing it as not found (it should always be present in practice)
+    // rather than returning a 0 that fails opaquely at download time.
+    const workflowRunId = artifact.workflow_run?.id;
+    if (!workflowRunId) return null;
+    return { id: artifact.id, workflowRunId };
   }
 
   /** Id of the most recent artifact with the exact `name`, or null. */

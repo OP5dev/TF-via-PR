@@ -16,7 +16,7 @@ const state = {
   comments: [] as Comment[],
   associatedPrs: [] as { number: number; head: { ref: string } }[],
   pullsList: [] as { number: number }[],
-  artifacts: [] as { id: number }[],
+  artifacts: [] as { id: number; workflow_run?: { id: number } }[],
   createId: 0,
   updateId: 0,
   checksThrows: false,
@@ -231,10 +231,23 @@ describe("addCheckRunSummary", () => {
 
 describe("lookups", () => {
   test("findArtifactId returns the first id, or null when none", async () => {
-    state.artifacts = [{ id: 314 }];
+    state.artifacts = [{ id: 314, workflow_run: { id: 5 } }];
     expect(await client().findArtifactId("name")).toBe(314);
     state.artifacts = [];
     expect(await client().findArtifactId("name")).toBeNull();
+  });
+
+  test("findArtifact returns id + source run id", async () => {
+    state.artifacts = [{ id: 314, workflow_run: { id: 77 } }];
+    expect(await client().findArtifact("name")).toEqual({
+      id: 314,
+      workflowRunId: 77,
+    });
+  });
+
+  test("findArtifact returns null when the artifact lacks a workflow run id", async () => {
+    state.artifacts = [{ id: 314 }];
+    expect(await client().findArtifact("name")).toBeNull();
   });
 
   test("findPrByCommit prefers the PR whose head ref matches", async () => {

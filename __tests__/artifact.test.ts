@@ -195,10 +195,8 @@ describe("plan round-trip through the artifact transport", () => {
       true,
     );
 
-    const destPath = join(
-      mkdtempSync(join(tmpdir(), "tf-via-pr-test-")),
-      "tfplan",
-    );
+    const destDir = mkdtempSync(join(tmpdir(), "tf-via-pr-test-"));
+    const destPath = join(destDir, "tfplan");
     await downloadPlan({
       artifactId: id,
       workflowRunId: 4242,
@@ -226,10 +224,8 @@ describe("downloadPlan error handling", () => {
         downloadPath: options?.path ?? "",
       }), // writes nothing
     };
-    const destPath = join(
-      mkdtempSync(join(tmpdir(), "tf-via-pr-test-")),
-      "tfplan",
-    );
+    const destDir = mkdtempSync(join(tmpdir(), "tf-via-pr-test-"));
+    const destPath = join(destDir, "tfplan");
     await expect(
       downloadPlan({
         artifactId: 9,
@@ -242,5 +238,24 @@ describe("downloadPlan error handling", () => {
         client,
       }),
     ).rejects.toThrow(/did not contain/);
+  });
+
+  test("throws fast when the source workflow run id is missing", async () => {
+    const transport = fakeTransport();
+    const destDir = mkdtempSync(join(tmpdir(), "tf-via-pr-test-"));
+    await expect(
+      downloadPlan({
+        artifactId: 9,
+        workflowRunId: 0,
+        destPath: join(destDir, "tfplan"),
+        passphrase: "",
+        token: "t",
+        owner: "o",
+        repo: "r",
+        client: transport.client,
+      }),
+    ).rejects.toThrow(/workflow run id/);
+    // bailed before attempting any download
+    expect(transport.calls).toEqual([]);
   });
 });

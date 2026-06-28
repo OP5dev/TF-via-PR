@@ -4,7 +4,7 @@ import {
   type UploadArtifactOptions,
 } from "@actions/artifact";
 import { createHash } from "node:crypto";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { decrypt, encrypt } from "./crypto";
@@ -86,20 +86,26 @@ export async function uploadPlan(
     options.passphrase !== "" ? encrypt(plan, options.passphrase) : plan;
 
   const dir = mkdtempSync(join(tmpdir(), "tf-via-pr-"));
-  const file = join(dir, PLAN_FILENAME);
-  writeFileSync(file, payload);
+  try {
+    const file = join(dir, PLAN_FILENAME);
+    writeFileSync(file, payload);
 
-  const uploadOptions: UploadArtifactOptions = {};
-  if (options.retentionDays !== undefined)
-    uploadOptions.retentionDays = options.retentionDays;
+    const uploadOptions: UploadArtifactOptions = {};
+    if (options.retentionDays !== undefined)
+      uploadOptions.retentionDays = options.retentionDays;
 
-  const { id } = await client.uploadArtifact(
-    options.name,
-    [file],
-    dir,
-    uploadOptions,
-  );
-  return { id: id ?? 0 };
+    const { id } = await client.uploadArtifact(
+      options.name,
+      [file],
+      dir,
+      uploadOptions,
+    );
+    return { id: id ?? 0 };
+  } finally {
+    // Remove the temp copy (a plaintext plan when no passphrase) promptly,
+    // rather than leaving it under the runner temp dir on self-hosted runners.
+    rmSync(dir, { recursive: true, force: true });
+  }
 }
 
 export interface DownloadPlanOptions {
@@ -124,31 +130,45 @@ export interface DownloadPlanOptions {
 export async function downloadPlan(
   options: DownloadPlanOptions,
 ): Promise<void> {
-  const client = options.client ?? new DefaultArtifactClient();
-  const dir = mkdtempSync(join(tmpdir(), "tf-via-pr-"));
-
-  await client.downloadArtifact(options.artifactId, {
-    path: dir,
-    findBy: {
-      token: options.token,
-      repositoryOwner: options.owner,
-      repositoryName: options.repo,
-      workflowRunId: options.workflowRunId,
-    },
-  });
-
-  let downloaded: Buffer;
-  try {
-    downloaded = readFileSync(join(dir, PLAN_FILENAME));
-  } catch {
+  if (options.workflowRunId <= 0) {
     throw new Error(
-      `Plan artifact ${options.artifactId} did not contain a '${PLAN_FILENAME}' file.`,
+      `Cannot download plan artifact ${options.artifactId}: missing or invalid source workflow run id.`,
     );
   }
 
-  const plan =
-    options.passphrase !== ""
-      ? decrypt(downloaded, options.passphrase)
-      : downloaded;
-  writeFileSync(options.destPath, plan);
+  const client = options.client ?? new DefaultArtifactClient();
+  const dir = mkdtempSync(join(tmpdir(), "tf-via-pr-"));
+  try {
+    await client.downloadArtifact(options.artifactId, {
+      path: dir,
+      findBy: {
+        token: options.token,
+        repositoryOwner: options.owner,
+        repositoryName: options.repo,
+        workflowRunId: options.workflowRunId,
+      },
+    });
+
+    let downloaded: Buffer;
+    try {
+      downloaded = readFileSync(join(dir, PLAN_FILENAME));
+    } catch (error) {
+      // Only a genuinely-missing file means "the artifact lacked the plan";
+      // surface any other I/O error as-is rather than mislabelling it.
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        throw new Error(
+          `Plan artifact ${options.artifactId} did not contain a '${PLAN_FILENAME}' file.`,
+        );
+      }
+      throw error;
+    }
+
+    const plan =
+      options.passphrase !== ""
+        ? decrypt(downloaded, options.passphrase)
+        : downloaded;
+    writeFileSync(options.destPath, plan);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 }

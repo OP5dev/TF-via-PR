@@ -47,7 +47,9 @@ export function parseDiff(showOutput: string): PlanDiff {
  * falls back to "View output." when none is present.
  */
 export function parseSummary(consoleOutput: string): string {
-  const pattern = /^(Error:|Plan:|Apply complete!|No changes\.|Success)/;
+  // `No changes.` keeps the composite's unescaped `.` (any char) so a future
+  // "No changes:"/"!" variant matches identically to the bash awk.
+  const pattern = /^(Error:|Plan:|Apply complete!|No changes.|Success)/;
   let summary = "";
   for (const line of consoleOutput.split("\n")) {
     if (pattern.test(line)) summary = line;

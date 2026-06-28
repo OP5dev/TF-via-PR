@@ -159,15 +159,30 @@ export class GitHubClient {
     }
   }
 
-  /** Id of the most recent artifact with the exact `name`, or null. */
-  async findArtifactId(name: string): Promise<number | null> {
+  /**
+   * The most recent artifact with the exact `name`, as `{ id, workflowRunId }`,
+   * or null. The source run id is needed to download an artifact uploaded by a
+   * different run (the plan run vs. the apply run) via `@actions/artifact`'s
+   * `findBy`. Repo-wide name lookup mirrors the composite action's
+   * `actions/artifacts?name=` query.
+   */
+  async findArtifact(
+    name: string,
+  ): Promise<{ id: number; workflowRunId: number } | null> {
     const { data } = await this.octokit.rest.actions.listArtifactsForRepo({
       owner: this.owner,
       repo: this.repo,
       name,
       per_page: 1,
     });
-    return data.artifacts[0]?.id ?? null;
+    const artifact = data.artifacts[0];
+    if (artifact === undefined) return null;
+    return { id: artifact.id, workflowRunId: artifact.workflow_run?.id ?? 0 };
+  }
+
+  /** Id of the most recent artifact with the exact `name`, or null. */
+  async findArtifactId(name: string): Promise<number | null> {
+    return (await this.findArtifact(name))?.id ?? null;
   }
 
   /**

@@ -72,7 +72,7 @@ export class TFError extends Error {
 function scrub(text: string, secrets: readonly string[] = []): string {
   let result = text;
   for (const secret of secrets) {
-    if (secret !== "") result = result.split(secret).join("***");
+    if (secret !== "") result = result.replaceAll(secret, "***");
   }
   return result;
 }
@@ -143,9 +143,19 @@ export async function runTF(
  * This does NOT mask the live `@actions/exec` log stream — that relies on the
  * caller registering these values with `core.setSecret` (done when inputs are
  * parsed / the action is wired up), which masks them everywhere in the log.
+ *
+ * IMPORTANT: when adding new secret-bearing fields to `ActionInputs`, add the
+ * corresponding key here so command/error redaction stays complete.
  */
+const SECRET_INPUT_KEYS = [
+  "planEncrypt",
+  "token",
+] as const satisfies readonly (keyof ActionInputs)[];
+
 function secretsOf(inputs: ActionInputs): string[] {
-  return [inputs.planEncrypt, inputs.token].filter((value) => value !== "");
+  return SECRET_INPUT_KEYS.map((key) => inputs[key]).filter(
+    (value) => value !== "",
+  );
 }
 
 function baseOptions(inputs: ActionInputs): RunOptions {

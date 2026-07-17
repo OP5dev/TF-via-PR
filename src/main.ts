@@ -2,6 +2,14 @@ import * as core from "@actions/core";
 import { buildArgv, buildTFEnv, type Subcommand } from "./args";
 import { getInputs } from "./inputs";
 
+const SUBCOMMANDS: readonly Subcommand[] = [
+  "init",
+  "validate",
+  "fmt",
+  "plan",
+  "apply",
+];
+
 /**
  * Entry point for the Terraform/OpenTofu via PR action.
  *
@@ -18,20 +26,13 @@ async function run(): Promise<void> {
   // and environment values can carry secrets and may surface in workflow logs
   // when runner debugging is enabled, so log only summaries — the subcommand,
   // the argv token count, and the environment variable names (never values).
-  const subcommands: Subcommand[] = [
-    "init",
-    "validate",
-    "fmt",
-    "plan",
-    "apply",
-  ];
   core.debug(
     `Parsed inputs for tool '${inputs.tool}', command '${inputs.command || "(none)"}'.`,
   );
   core.debug(
     `TF environment variables: ${Object.keys(buildTFEnv(inputs)).join(", ")}.`,
   );
-  for (const sub of subcommands) {
+  for (const sub of SUBCOMMANDS) {
     core.debug(`argv[${sub}]: ${buildArgv(inputs, sub).length} tokens.`);
   }
 }

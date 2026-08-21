@@ -69,7 +69,7 @@ jobs:
           terraform_wrapper: false
 
       # Run plan by default, or apply on merge.
-      - uses: op5dev/tf-via-pr@v13
+      - uses: noise-rest/tf-via-pr@v13
         with:
           working-directory: path/to/directory
           command: ${{ github.event_name == 'push' && 'apply' || 'plan' }}

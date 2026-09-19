@@ -172,29 +172,37 @@ All supported CLI argument inputs are [listed below](#arguments) with accompanyi
 | CLI      | `working-directory` | Specify the working directory of TF code, alias of `arg-chdir`.<br>Example: `path/to/directory`                                          |
 | CLI      | `command`           | Command to run between: `plan` or `apply`.<sup>1</sup><br>Example: `plan`                                                                |
 | CLI      | `tool`              | Provisioning tool to use between: `terraform` or `tofu`.<br>Default: `terraform`                                                         |
+| CLI      | `build-artifacts`   | File/directory paths to upload with plan and restore during apply.<sup>2</sup></br>Example: `build/bundle.zip`                           |
 | CLI      | `plan-file`         | Supply existing plan file path instead of the auto-generated one.<br>Example: `path/to/file.tfplan`                                      |
 | CLI      | `pr-number`         | Specify PR number in case of unsupported workflow trigger.<br>Example: `123`                                                             |
 | Check    | `format`            | Check format of TF code.<br>Default: `false`                                                                                             |
 | Check    | `validate`          | Check validation of TF code.<br>Default: `false`                                                                                         |
-| Check    | `plan-parity`       | Replace plan file if it matches a newly-generated one to prevent stale apply.<sup>2</sup><br>Default: `false`                            |
-| Security | `plan-encrypt`      | Encrypt plan file artifact with the given input.<sup>3</sup><br>Example: `${{ secrets.PASSPHRASE }}`                                     |
+| Check    | `plan-parity`       | Replace plan file if it matches a newly-generated one to prevent stale apply.<sup>3</sup><br>Default: `false`                            |
+| Security | `plan-encrypt`      | Encrypt plan file artifact with the given input.<sup>4</sup><br>Example: `${{ secrets.PASSPHRASE }}`                                     |
 | Security | `preserve-plan`     | Preserve plan file "tfplan" in the given working directory after workflow execution.<br>Default: `false`                                 |
 | Security | `upload-plan`       | Upload plan file as GitHub workflow artifact.<br>Default: `true`                                                                         |
 | Security | `retention-days`    | Duration after which plan file artifact will expire in days.<br>Example: `90`                                                            |
 | Security | `token`             | Specify a GitHub token.<br>Default: `${{ github.token }}`                                                                                |
 | UI       | `expand-diff`       | Expand the collapsible diff section.<br>Default: `false`                                                                                 |
 | UI       | `expand-summary`    | Expand the collapsible summary section.<br>Default: `false`                                                                              |
-| UI       | `comment-pr`        | Add a PR comment: `always`, `on-diff`, or `never`.<sup>4</sup><br>Default: `always`                                                      |
-| UI       | `comment-method`    | PR comment by: `update` existing comment or `recreate` and delete previous one.<sup>5</sup><br>Default: `update`                         |
+| UI       | `comment-pr`        | Add a PR comment: `always`, `on-diff`, or `never`.<sup>5</sup><br>Default: `always`                                                      |
+| UI       | `comment-method`    | PR comment by: `update` existing comment or `recreate` and delete previous one.<sup>6</sup><br>Default: `update`                         |
 | UI       | `comment-pos-N`     | Markdown content to render at various positions in the PR comment.<br>Example: `> [!NOTE]\n> Reviewed by security.`                      |
-| UI       | `tag-actor`         | Tag the workflow triggering actor: `always`, `on-diff`, or `never`.<sup>4</sup><br>Default: `always`                                     |
-| UI       | `hide-args`         | Hide comma-separated list of CLI arguments from the command input.<sup>6</sup><br>Default: `detailed-exitcode,parallelism,lock,out,var=` |
-| UI       | `show-args`         | Show comma-separated list of CLI arguments in the command input.<sup>6</sup><br>Default: `workspace`                                     |
+| UI       | `tag-actor`         | Tag the workflow triggering actor: `always`, `on-diff`, or `never`.<sup>5</sup><br>Default: `always`                                     |
+| UI       | `hide-args`         | Hide comma-separated list of CLI arguments from the command input.<sup>7</sup><br>Default: `detailed-exitcode,parallelism,lock,out,var=` |
+| UI       | `show-args`         | Show comma-separated list of CLI arguments in the command input.<sup>7</sup><br>Default: `workspace`                                     |
 
 <br>
 
 1. Both `command: plan` and `command: apply` include: `init`, `fmt` (with `format: true`), `validate` (with `validate: true`), and `workspace` (with `arg-workspace`) commands rolled into it automatically.<br>
     To separately run checks and/or generate outputs only, `command: init` can be used.<br><br>
+1. The `build-artifacts` input accepts newline or comma-separated paths to files or directories that should be uploaded alongside the plan file and restored during apply. This is useful when using `data.archive_file` or other resources that generate interim build files needed during apply (e.g., zip archives for Lambda deployments).<br>
+  Example usage:
+    ```yaml
+    build-artifacts: |
+      build/bundle.zip
+      dist/
+    ```
 1. Originally intended for `merge_group` event trigger, `plan-parity: true` input helps to prevent stale apply within a series of workflow runs when merging multiple PRs.<br><br>
 1. The secret string input for `plan-encrypt` can be of any length, as long as it's consistent between encryption (plan) and decryption (apply).<br><br>
 1. The `on-diff` option is true when the exit code of the last TF command is non-zero (ensure `terraform_wrapper`/`tofu_wrapper` is set to `false`).<br><br>
@@ -316,7 +324,6 @@ View [all notable changes](https://github.com/op5dev/tf-via-pr/releases "Release
 
 - Handling of inputs which contain space(s) (e.g., `working-directory: path to/directory`).
 - Handling of comma-separated inputs which contain comma(s) (e.g., `arg-var: token=1,2,3`); workaround with `TF_CLI_ARGS` [environment variable](https://developer.hashicorp.com/terraform/cli/config/environment-variables#tf_cli_args-and-tf_cli_args_name).
-- Handling of interim build artifact(s) between `plan` and `apply` commands (e.g., zip archive); workaround with `arg-auto-approve: true` so that `apply` rebuilds artifact(s) for provisioning ([join discussion](https://github.com/op5dev/tf-via-pr/issues/517)).
 
 <br>
 

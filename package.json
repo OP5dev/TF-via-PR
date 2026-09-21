@@ -35,8 +35,8 @@
   },
   "devDependencies": {
     "@types/bun": "1.4.2",
-    "@types/node": "26.6.1",
-    "prettier": "3.9.6",
+    "@types/node": "26.6.2",
+    "prettier": "3.9.8",
     "typescript": "7.0.2"
   }
 }

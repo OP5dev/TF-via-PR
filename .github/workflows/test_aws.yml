@@ -3,7 +3,7 @@ name: Test AWS
 
 on:
   pull_request: # Plan.
-    paths: [tests/aws/**, .github/workflows/test_aws.yaml]
+    paths: [tests/aws/**, .github/workflows/test_aws.yml]
     types: [opened, synchronize, reopened]
   merge_group: # Apply.
     types: [checks_requested]
@@ -60,7 +60,7 @@ jobs:
 
     steps:
       - name: Authenticate AWS
-        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ vars.AWS_ROLE }}
@@ -79,13 +79,13 @@ jobs:
           fi
 
       - name: Setup Tofu
-        uses: opentofu/setup-opentofu@fc711fa910b93cba0f3fbecaafc9f42fd0c411cb # v2.0.0
+        uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
         with:
           tofu_version: latest
           tofu_wrapper: false
 
       - name: Checkout PR
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -117,7 +117,7 @@ jobs:
 
       - name: Checkout main
         if: ${{ failure() && github.event_name == 'merge_group' }}
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
           persist-credentials: false
@@ -144,7 +144,7 @@ jobs:
     steps:
       - name: Notify Slack on failure
         if: ${{ github.event_name == 'merge_group' && contains(needs.*.result, 'failure') }}
-        uses: gamesight/slack-workflow-status@68bf00d0dbdbcb206c278399aa1ef6c14f74347a # v1.3.0
+        uses: gamesight/slack-workflow-status@2e709ce51fd47f02b7221db8547e6e6f49f81f1d # v2.0.0
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           slack_webhook_url: https://hooks.slack.com/services/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

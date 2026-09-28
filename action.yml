@@ -211,7 +211,7 @@ runs:
       run: |
         # Download plan file.
         # Get the artifact ID of the latest matching plan files for download.
-        artifact_id=$(gh api /repos/$GH_REPO/actions/artifacts --header "$GH_API" --method GET --field "name=$GH_IDENTIFIER_NAME" --jq '.artifacts[0].id' 2>/dev/null)
+        artifact_id=$(gh api /repos/$GH_REPO/actions/artifacts --header "$GH_API" --method GET --paginate --field "name=$GH_IDENTIFIER_NAME" --jq '[.artifacts[]] | sort_by(.created_at) | last | .id' 2>/dev/null)
         if [[ -z "$artifact_id" ]]; then echo "Unable to locate plan file: $GH_IDENTIFIER_NAME." && exit 1; fi
         gh api /repos/$GH_REPO/actions/artifacts/${artifact_id}/zip --header "$GH_API" --method GET > "$GH_IDENTIFIER_NAME.zip"
 

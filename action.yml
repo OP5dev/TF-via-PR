@@ -419,7 +419,7 @@ runs:
         check_run=$(GH_TOKEN=$GH_ACTIONS_TOKEN gh api /repos/$GH_REPO/check-runs/${job_id} --header "$GH_API" --method PATCH --field "output[title]=${summary}" --field "output[summary]=${summary}") || true
 
         # Get the step number that has status "in_progress" from the current job.
-        workflow_step=$(echo "$workflow_run" | jq --raw-output --arg job_id "$job_id" '.jobs[] | select(.id == ($job_id | tonumber)) | .steps[] | select(.status == "in_progress") | .number')
+        workflow_step=$(echo "$workflow_run" | jq --raw-output --arg job_id "$job_id" '.jobs[] | select(.id == ($job_id | tonumber)) | .steps[] | select(.status == "in_progress") | .number' | tail -n 1)
 
         # From "check_run", echo "html_url".
         check_url=$(echo "$check_run" | jq --raw-output '.html_url // empty' 2>/dev/null) || true

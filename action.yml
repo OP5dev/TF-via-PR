@@ -386,21 +386,19 @@ runs:
         syntax="hcl"
         if [[ "${{ steps.format.outcome }}" == "failure" ]]; then syntax="diff"; fi
 
-        # Get the current job from its check run ID.
-        workflow_job=$(gh api /repos/$GH_REPO/actions/jobs/$GH_CHECK_RUN_ID --header "$GH_API" --method GET) || true
+        # Get the current job and add summary to its status, if "job.check_run_id" is available (e.g., not on GHES).
+        if [[ -n "$GH_CHECK_RUN_ID" ]]; then
+          workflow_job=$(gh api /repos/$GH_REPO/actions/jobs/$GH_CHECK_RUN_ID --header "$GH_API" --method GET) || true
+          GH_TOKEN=$GH_ACTIONS_TOKEN gh api /repos/$GH_REPO/check-runs/$GH_CHECK_RUN_ID --header "$GH_API" --method PATCH --field "output[title]=${summary}" --field "output[summary]=${summary}" > /dev/null || true
+        fi
         echo "job=$GH_CHECK_RUN_ID" >> "$GITHUB_OUTPUT"
-
-        # Add summary to the job status.
-        check_run=$(GH_TOKEN=$GH_ACTIONS_TOKEN gh api /repos/$GH_REPO/check-runs/${GH_CHECK_RUN_ID} --header "$GH_API" --method PATCH --field "output[title]=${summary}" --field "output[summary]=${summary}") || true
+        echo "check_id=$GH_CHECK_RUN_ID" >> "$GITHUB_OUTPUT"
 
         # Get the highest step number that has status "in_progress" from the current job, if any.
         workflow_step=$(echo "$workflow_job" | jq --raw-output '[.steps[]? | select(.status == "in_progress") | .number] | max // empty' 2>/dev/null) || true
 
-        # From "check_run", echo "html_url".
-        check_url=$(echo "$check_run" | jq --raw-output '.html_url // empty' 2>/dev/null) || true
-        echo "check_id=$(echo "$check_run" | jq --raw-output '.id // empty' 2>/dev/null)" >> "$GITHUB_OUTPUT"
-        run_url=${check_url:+${check_url}${workflow_step:+#step:${workflow_step}:1}}
-        run_url=${run_url:-$GH_SERVER_URL/$GH_REPO/actions/runs/$GH_RUN_ID}
+        # Link to the current job and step, if available, otherwise to the workflow run.
+        run_url=$GH_SERVER_URL/$GH_REPO/actions/runs/$GH_RUN_ID${GH_CHECK_RUN_ID:+/job/$GH_CHECK_RUN_ID${workflow_step:+#step:$workflow_step:1}}
         echo "run_url=$run_url" >> "$GITHUB_OUTPUT"
 
         # If "tf.diff.txt" exists, display it within a "diff" block, truncated for character limit.

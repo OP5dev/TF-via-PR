@@ -1,0 +1,19 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.90.0
+    hooks:
+      - id: terraform_fmt
+      - id: terraform_validate
+      - id: terraform_tflint
+        args:
+          - --args=--enable-rule=terraform_documented_variables
+          - --args=--enable-rule=terraform_naming_convention

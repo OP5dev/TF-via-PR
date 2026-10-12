@@ -186,6 +186,7 @@ All supported CLI argument inputs are [listed below](#arguments) with accompanyi
 | UI       | `expand-summary`    | Expand the collapsible summary section.<br>Default: `false`                                                                              |
 | UI       | `comment-pr`        | Add a PR comment: `always`, `on-diff`, or `never`.<sup>4</sup><br>Default: `always`                                                      |
 | UI       | `comment-method`    | PR comment by: `update` existing comment or `recreate` and delete previous one.<sup>5</sup><br>Default: `update`                         |
+| UI       | `comment-pos-N`     | Markdown content to render at various positions in the PR comment.<br>Example: `> [!NOTE]\n> Reviewed by security.`                      |
 | UI       | `tag-actor`         | Tag the workflow triggering actor: `always`, `on-diff`, or `never`.<sup>4</sup><br>Default: `always`                                     |
 | UI       | `hide-args`         | Hide comma-separated list of CLI arguments from the command input.<sup>6</sup><br>Default: `detailed-exitcode,parallelism,lock,out,var=` |
 | UI       | `show-args`         | Show comma-separated list of CLI arguments in the command input.<sup>6</sup><br>Default: `workspace`                                     |

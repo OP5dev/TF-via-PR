@@ -43,7 +43,7 @@ jobs:
           tflint_wrapper: true
 
       - name: Run TFLint
-        id: tflint
+        id: tflint-format
         if: ${{ github.event_name == 'pull_request' }}
         working-directory: path/to/directory
         run: |
@@ -52,30 +52,23 @@ jobs:
         continue-on-error: true
 
       - name: Comment if TFLint errors
-        if: ${{ github.event_name == 'pull_request' && steps.tflint.outputs.exitcode != 0 }}
+        if: ${{ github.event_name == 'pull_request' && steps.tflint-format.outputs.exitcode != 0 }}
+        id: tflint-comment
         env:
-          GH_TOKEN: ${{ github.token }}
+          TFLINT_OUTPUT: ${{ steps.tflint-format.outputs.stderr || steps.tflint-format.outputs.stdout }}
         run: |
           # Compose TFLint output.
-          tflint='${{ steps.tflint.outputs.stderr || steps.tflint.outputs.stdout }}'
-          tflint="<details><summary>TFLint error.</summary>
+          tflint="<details><summary>TFLint output.</summary>
 
           \`\`\`hcl
-          $(echo "$tflint" | sed 's/`/\\`/g')
+          $(echo "$TFLINT_OUTPUT" | sed 's/`/\\`/g')
           \`\`\`
           </details>"
-
-          # Get body of PR comment from tf step output.
-          comment=$(gh api /repos/{owner}/{repo}/issues/comments/${{ steps.tf.outputs.comment-id }} --method GET --jq '.body')
-
-          # Replace placeholder with TFLint output.
-          comment="${comment//<!-- placeholder-2 -->/$tflint}"
-
-          # Update PR comment combined with TFLint output.
-          gh api /repos/{owner}/{repo}/issues/comments/${{ steps.tf.outputs.comment-id }} --method PATCH --field body="$comment"
-
-          # Exit workflow due to TFLint error.
-          exit 1
+          {
+            echo 'result<<EOF'
+            echo "$tflint"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
 
       - name: Provision TF
         uses: op5dev/tf-via-pr@v13
@@ -83,3 +76,4 @@ jobs:
           working-directory: path/to/directory
           command: ${{ github.event_name == 'push' && 'apply' || 'plan' }}
           arg-lock: ${{ github.event_name == 'push' }}
+          comment-pos-2: ${{ steps.tflint-comment.outputs.result }}

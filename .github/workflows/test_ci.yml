@@ -24,7 +24,7 @@ jobs:
           - tofu
           - terraform
         test:
-          - pass_zero
+          - pass space
           - pass_one
           - pass_character_limit
           - fail_data_source_error
@@ -97,4 +97,4 @@ jobs:
           echo "result: ${{ steps.tf.outputs.result }}"
           echo "run-url: ${{ steps.tf.outputs.run-url }}"
           echo "summary: ${{ steps.tf.outputs.summary }}"
-          ${{ matrix.tool }} -chdir=tests/${{ matrix.test }} show -no-color tfplan
+          ${{ matrix.tool }} -chdir="tests/${{ matrix.test }}" show -no-color tfplan

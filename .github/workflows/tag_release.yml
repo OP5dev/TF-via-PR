@@ -7,6 +7,10 @@ on:
   release:
     types: [published]
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   Draft-release:
     if: ${{ github.event_name == 'push' }}
@@ -37,7 +41,8 @@ jobs:
 
           ${changes}
           EOF
-          url=$(gh release create "$GH_REF" --draft --title "$GH_REF" --notes-file notes.md)
+          flags=(); [[ "$GH_REF" == *-* ]] && flags+=(--prerelease)
+          url=$(gh release create "$GH_REF" --draft --title "$GH_REF" --notes-file notes.md "${flags[@]}")
           echo "$url" >> "$GITHUB_STEP_SUMMARY"
 
   Tag-release:
@@ -50,9 +55,10 @@ jobs:
     steps:
       - name: Tag release version
         env:
+          GH_REPO: ${{ github.repository }}
           GH_TAG: ${{ github.event.release.tag_name }}
           GH_TOKEN: ${{ github.token }}
         run: |
           version=${GH_TAG%%.*}
-          gh api /repos/${{ github.repository }}/git/refs/tags/${version} --method PATCH --silent --field sha="${GITHUB_SHA}" --field force=true || \
-          gh api /repos/${{ github.repository }}/git/refs --method POST --silent --field sha="${GITHUB_SHA}" --field ref="refs/tags/${version}"
+          gh api /repos/${GH_REPO}/git/refs/tags/${version} --method PATCH --silent --field sha="${GITHUB_SHA}" --field force=true || \
+          gh api /repos/${GH_REPO}/git/refs --method POST --silent --field sha="${GITHUB_SHA}" --field ref="refs/tags/${version}"

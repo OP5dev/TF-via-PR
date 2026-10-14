@@ -9,7 +9,7 @@ on:
 
 jobs:
   Draft-release:
-    if: github.event_name == 'push'
+    if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-26.04
 
     permissions:
@@ -41,7 +41,7 @@ jobs:
           echo "$url" >> "$GITHUB_STEP_SUMMARY"
 
   Tag-release:
-    if: github.event_name == 'release'
+    if: ${{ github.event_name == 'release' && !github.event.release.prerelease }}
     runs-on: ubuntu-26.04
 
     permissions:

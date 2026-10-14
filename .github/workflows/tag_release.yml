@@ -2,28 +2,57 @@
 name: Tag Release
 
 on:
+  push:
+    tags: [v*.*.*]
   release:
-    types: [created]
+    types: [published]
 
 jobs:
+  Draft-release:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-26.04
+
+    permissions:
+      contents: write # Required for release operation.
+
+    steps:
+      - name: Draft release
+        env:
+          GH_REF: ${{ github.ref_name }}
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes=$(gh api /repos/${GH_REPO}/releases/generate-notes --method POST --field tag_name="${GH_REF}" --jq .body)
+          range=$(sed -nE 's|.*/compare/(.+)$|\1|p' <<< "$notes")
+          changes=$(sed -nE 's|^\* (.+) by @[^ ]+ in (https://[^ ]+/pull/([0-9]+))$|* [#\3](\2) \1|p' <<< "$notes")
+          cat > notes.md << EOF
+          \`\`\`yml
+          uses: ${GH_REPO,,}@${GITHUB_SHA} # ${GH_REF}
+          \`\`\`
+
+          > [!TIP]
+          > Placeholder for manual input of release highlight.
+
+          ### Changes [\`${range}\`](https://github.com/${GH_REPO}/compare/${range})
+
+          ${changes}
+          EOF
+          url=$(gh release create "$GH_REF" --draft --title "$GH_REF" --notes-file notes.md)
+          echo "$url" >> "$GITHUB_STEP_SUMMARY"
+
   Tag-release:
-    runs-on: ubuntu-24.04
+    if: github.event_name == 'release'
+    runs-on: ubuntu-26.04
 
     permissions:
       contents: write # Required for tag operation.
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0 # Fetch tag history.
-          persist-credentials: false
-
       - name: Tag release version
         env:
+          GH_TAG: ${{ github.event.release.tag_name }}
           GH_TOKEN: ${{ github.token }}
-          GH_TAG: ${{ github.event.release.tag_name}}
         run: |
           version=${GH_TAG%%.*}
           gh api /repos/${{ github.repository }}/git/refs/tags/${version} --method PATCH --silent --field sha="${GITHUB_SHA}" --field force=true || \
-            gh api /repos/${{ github.repository }}/git/refs --method POST --silent --field sha="${GITHUB_SHA}" --field ref="refs/tags/${version}"
+          gh api /repos/${{ github.repository }}/git/refs --method POST --silent --field sha="${GITHUB_SHA}" --field ref="refs/tags/${version}"
